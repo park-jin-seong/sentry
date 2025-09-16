@@ -28,10 +28,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
         Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.get("username"), req.get("password"))
+                new UsernamePasswordAuthenticationToken(req.get("username"), req.get("userpassword"))
         );
         User principal = (User) auth.getPrincipal();
-        String token = jwtUtil.generateToken(principal.getUsername(), Map.of("role", "USER"));
+        String token = jwtUtil.generateToken(principal.getUsername(), Map.of("role", "master"));
         return ResponseEntity.ok(Map.of("accessToken", token));
     }
 
