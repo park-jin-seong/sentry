@@ -1,7 +1,6 @@
 package com.sentry.sentry.chat;
 
-import com.sentry.sentry.Userinfo;
-import com.sentry.sentry.chat.Room;
+import com.sentry.sentry.entity.Userinfo;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
