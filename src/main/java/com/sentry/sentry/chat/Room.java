@@ -1,4 +1,4 @@
-package com.sentry.sentry;
+package com.sentry.sentry.chat;
 
 import jakarta.persistence.*;
 import lombok.Data;
