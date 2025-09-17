@@ -13,8 +13,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -22,9 +22,9 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @EnableMethodSecurity(
-        prePostEnabled = true,   // @PreAuthorize / @PostAuthorize
-        securedEnabled = true,   // @Secured
-        jsr250Enabled = true     // @RolesAllowed
+        prePostEnabled = true,
+        securedEnabled = true,
+        jsr250Enabled = true
 )
 public class SecurityConfig {
 
@@ -36,20 +36,30 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(req -> {
                     var c = new CorsConfiguration();
-                    c.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
-                    c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-                    c.setAllowedHeaders(List.of("*")); // Authorization 포함
+                    // 반드시 사용하는 프론트 포트 추가
+                    c.setAllowedOrigins(List.of(
+                            "http://localhost:5176",   // Vite dev (현재 네 로그)
+                            "http://localhost:5173",
+                            "http://localhost:3000"
+
+                    ));
+                    // 포트가 바뀌어도 동작하도록(선택)
+                    c.setAllowedOriginPatterns(List.of(
+                            "http://localhost:*",
+                            "http://127.0.0.1:*"
+                    ));
+                    c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+                    c.setAllowedHeaders(List.of("*")); // Authorization 등 헤더 허용
+                    c.setExposedHeaders(List.of("Authorization","accessToken","Content-Type")); // (선택) 클라이언트에서 읽을 헤더
                     c.setAllowCredentials(true);
                     return c;
                 }))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) ->
-                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED)) // 401
-                )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) ->
+                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
-                        .requestMatchers("/api/auth/**").permitAll()           // 로그인/회원가입/토큰갱신 등
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // Preflight 허용
+                        .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         .anyRequest().authenticated()
                 )

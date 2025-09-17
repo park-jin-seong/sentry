@@ -16,15 +16,15 @@ public class Userinfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", nullable = false, unique = true)
+    @Column(name = "username", length = 45, nullable = false, unique = true)
     private String username;
 
     @JsonIgnore
     @ToString.Exclude
-    @Column(name = "userpassword", nullable = false)
+    @Column(name = "userpassword", length = 255,nullable = false)
     private String userpassword;
 
-    @Column(name = "nickname", nullable = false, unique = true)
+    @Column(name = "nickname", length = 255, nullable = false, unique = true)
     private String nickname;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
