@@ -1,9 +1,9 @@
 package com.sentry.sentry.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-
 import java.util.List;
 
 @Entity
@@ -12,6 +12,7 @@ import java.util.List;
 public class Userinfo {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,6 +20,8 @@ public class Userinfo {
     @Column(name = "username", nullable = false, unique = true)
     private String username;
 
+    @JsonIgnore
+    @ToString.Exclude
     @Column(name = "userpassword", nullable = false)
     private String userpassword;
 
