@@ -1,10 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+<meta charset="UTF-8">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <title>WebSocket Chat Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
-$END$
+<h1>WebSocket Chat Test</h1>
+<div id="messages"></div>
+<input type="text" id="messageInput" placeholder="메시지를 입력하세요">
+<button onclick="sendMessage()">전송</button>
+
+<script>
+    // WebSocketConfig.java의 설정에 맞춘 연결 정보
+    const serverUrl = 'http://localhost:8080/chat';
+    const subscribeUrl = '/room/1';
+    const publishUrl = '/send/1';
+
+    // SockJS를 사용하여 WebSocket 연결 시도
+    const sock = new SockJS(serverUrl);
+    // SockJS 위에 STOMP 클라이언트 생성
+    const stompClient = Stomp.over(sock);
+
+    // STOMP 디버그 메시지 비활성화
+    stompClient.debug = null;
+
+    stompClient.connect({}, function(frame) {
+        console.log('Connected: ' + frame);
+
+        // 메시지 구독
+        stompClient.subscribe(subscribeUrl, function(message) {
+            const messageBody = JSON.parse(message.body);
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<p><strong>방 ID ${messageBody.roomId}, 보낸 사람 ${messageBody.senderId}</strong>: ${messageBody.content}</p>`;
+        });
+    }, function(error) {
+        console.log('Connection error: ' + error);
+    });
+
+    // 메시지 전송 함수
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const messageContent = input.value;
+        const roomId = 1; // 클라이언트에서 하드코딩된 roomId
+
+        if (messageContent) {
+            const messageDTO = {
+                roomId: roomId, // DTO에 roomId 필드를 직접 추가
+                senderId: 1, // 테스트용 senderId
+                content: messageContent
+            };
+            stompClient.send(publishUrl, {}, JSON.stringify(messageDTO));
+            input.value = '';
+        }
+    }
+</script>
 </body>
 </html>

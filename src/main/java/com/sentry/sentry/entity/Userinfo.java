@@ -1,7 +1,10 @@
-package com.sentry.sentry;
+package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
+import java.util.List;
 
 @Entity
 @Table(name = "userinfo")
@@ -22,4 +25,7 @@ public class Userinfo {
     @Column(name = "nickname", nullable = false, unique = true)
     private String nickname;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<RoomUser> roomUsers;
 }
