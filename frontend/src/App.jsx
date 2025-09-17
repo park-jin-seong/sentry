@@ -1,6 +1,7 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login.jsx";
+import Home from "./Home.jsx";
 
 // 보호 라우트: 토큰 없으면 로그인으로
 function RequireAuth({ children }) {
@@ -8,9 +9,6 @@ function RequireAuth({ children }) {
     return authed ? children : <Navigate to="/login" replace />;
 }
 
-function Dashboard() {
-    return <h1>대시보드</h1>;
-}
 
 export default function App() {
     return (
@@ -19,13 +17,16 @@ export default function App() {
             <Route path="/login" element={<Login />} />
 
             <Route
-                path="/dashboard"
+                path="/home"
                 element={
                     <RequireAuth>
-                        <Dashboard />
+                        <Home />
                     </RequireAuth>
                 }
             />
+
+
+
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     );
