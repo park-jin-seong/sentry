@@ -37,12 +37,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(req -> {
                     var c = new CorsConfiguration();
                     // 반드시 사용하는 프론트 포트 추가
-                    c.setAllowedOrigins(List.of(
-                            "http://localhost:5176",   // Vite dev (현재 네 로그)
-                            "http://localhost:5173",
-                            "http://localhost:3000"
-
-                    ));
+//                    c.setAllowedOrigins(List.of(
+//                            "http://localhost:5176",
+//                            "http://localhost:5173",
+//                            "http://localhost:3000"
+//
+//                    ));
                     // 포트가 바뀌어도 동작하도록(선택)
                     c.setAllowedOriginPatterns(List.of(
                             "http://localhost:*",
@@ -60,7 +60,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // Preflight 허용
                         .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
-                        .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

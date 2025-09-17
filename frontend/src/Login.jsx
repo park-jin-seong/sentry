@@ -42,6 +42,11 @@ export default function Login() {
             }
 
             localStorage.setItem("accessToken", data.accessToken);
+
+            // 토큰 콘솔
+            console.log("[Login.jsx] 저장된 토큰:", localStorage.getItem("accessToken"));
+
+
             navigate(next, { replace: true });
         } catch (e) {
             setErr(e.message || "로그인 실패");
