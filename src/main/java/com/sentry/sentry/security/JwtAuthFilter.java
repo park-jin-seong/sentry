@@ -1,8 +1,10 @@
+// src/main/java/com/sentry/sentry/security/JwtAuthFilter.java
 package com.sentry.sentry.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.*;
@@ -12,10 +14,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+
     public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService uds) {
         this.jwtUtil = jwtUtil; this.userDetailsService = uds;
     }
@@ -30,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 공개/프리플라이트 → 패스
+        // 공개 경로/프리플라이트 → 패스
         String path = req.getRequestURI();
         if ("OPTIONS".equalsIgnoreCase(req.getMethod()) || path.startsWith("/api/auth/")) {
             chain.doFilter(req, res);
@@ -40,28 +44,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = req.getHeader("Authorization");
         String token = (StringUtils.hasText(header) && header.startsWith("Bearer ")) ? header.substring(7) : null;
 
-        try {
-            if (token != null) {
-                if (!jwtUtil.validate(token)) {
-                    unauthorized(res, "INVALID_OR_EXPIRED_TOKEN");
-                    return;
-                }
-                String username = jwtUtil.getUsername(token);
-                UserDetails user = userDetailsService.loadUserByUsername(username);
-
-                var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+        if (token != null) {
+            log.debug("[JwtAuthFilter] Authorization 헤더 감지, 일부 토큰 로그: {}", token.substring(0, Math.min(12, token.length())));
+            if (!jwtUtil.validate(token) || jwtUtil.isExpired(token)) {
+                log.warn("[JwtAuthFilter] 토큰 유효성/만료 실패 → 401로 이어질 수 있음");
+                // 여기선 체인 계속 → 나중에 401 처리 (EntryPoint)
+                chain.doFilter(req, res);
+                return;
             }
-            chain.doFilter(req, res);
-        } catch (Exception ex) {
-            unauthorized(res, "AUTH_FILTER_ERROR");
-        }
-    }
 
-    private void unauthorized(HttpServletResponse res, String code) throws IOException {
-        res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().write("{\"error\":\"" + code + "\"}");
+            String username = jwtUtil.getUsername(token);
+            log.debug("[JwtAuthFilter] 토큰 유효, username={}", username);
+
+            UserDetails user = userDetailsService.loadUserByUsername(username);
+
+            var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            log.trace("[JwtAuthFilter] Authorization 헤더 없음");
+        }
+
+        chain.doFilter(req, res);
     }
 }

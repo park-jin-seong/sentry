@@ -17,38 +17,29 @@ export default function Login() {
         setErr("");
 
         try {
+            console.log("[Login] 요청 전송 /api/auth/login", { username });
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include", // refresh 쿠키 수신
                 body: JSON.stringify({ username, userpassword }),
             });
 
-            let data;
             const ct = res.headers.get("content-type");
-            if (ct && ct.includes("application/json")) {
-                data = await res.json();
-            } else {
-                const text = await res.text();
-                throw new Error(text || "서버가 JSON을 반환하지 않았습니다.");
-            }
+            const data = ct?.includes("application/json") ? await res.json() : null;
 
             if (!res.ok) {
-                const message = data?.error || "로그인 실패";
-                throw new Error(message);
+                console.error("[Login] 실패 상태코드:", res.status, data);
+                throw new Error(data?.error || "로그인 실패");
             }
-
-            if (!data?.accessToken) {
-                throw new Error("토큰이 응답에 없습니다.");
-            }
+            if (!data?.accessToken) throw new Error("토큰이 응답에 없습니다.");
 
             localStorage.setItem("accessToken", data.accessToken);
-
-            // 토큰 콘솔
-            console.log("[Login.jsx] 저장된 토큰:", localStorage.getItem("accessToken"));
-
+            console.log("[Login] 저장된 accessToken:", localStorage.getItem("accessToken"));
 
             navigate(next, { replace: true });
         } catch (e) {
+            console.error("[Login] 에러:", e);
             setErr(e.message || "로그인 실패");
         }
     };
@@ -58,51 +49,18 @@ export default function Login() {
             <div className="login-card">
                 <div className="login-left">
                     <img src={sentryLogo} alt="SENTRY" className="login-logo" />
-
                     <form onSubmit={onSubmit} className="login-form">
-                        <label htmlFor="username" className="login-label">
-                            아이디
-                        </label>
-                        <input
-                            id="username"
-                            className="login-input"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="아이디를 입력하세요"
-                            autoComplete="username"
-                        />
-
-                        <label htmlFor="userpassword" className="login-label">
-                            비밀번호
-                        </label>
-                        <input
-                            id="userpassword"
-                            type="password"
-                            className="login-input"
-                            value={userpassword}
-                            onChange={(e) => setUserPassword(e.target.value)}
-                            placeholder="비밀번호를 입력하세요"
-                            autoComplete="current-password"
-                        />
-
-                        {err && (
-                            <p className="login-error">아이디 또는 비밀번호가 올바르지 않습니다.</p>
-                        )}
-
-                        <button type="submit" className="login-btn">
-                            로그인
-                        </button>
-                        {/* 회원가입은 submit 아님 (중복 submit 방지) */}
-                        <button
-                            type="button"
-                            className="login-btn"
-                            onClick={() => {}}
-                        >
-                            회원가입
-                        </button>
+                        <label htmlFor="username" className="login-label">아이디</label>
+                        <input id="username" className="login-input" value={username}
+                               onChange={(e) => setUsername(e.target.value)} placeholder="아이디를 입력하세요" autoComplete="username" />
+                        <label htmlFor="userpassword" className="login-label">비밀번호</label>
+                        <input id="userpassword" type="password" className="login-input" value={userpassword}
+                               onChange={(e) => setUserPassword(e.target.value)} placeholder="비밀번호를 입력하세요" autoComplete="current-password" />
+                        {err && <p className="login-error">{err}</p>}
+                        <button type="submit" className="login-btn">로그인</button>
+                        <button type="button" className="login-btn" onClick={() => {}}>회원가입</button>
                     </form>
                 </div>
-
                 <div className="login-right">
                     <img src={loginImg} alt="" className="login-illustration" />
                 </div>

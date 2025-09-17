@@ -1,18 +1,22 @@
+// src/main/java/com/sentry/sentry/login/AuthController.java
 package com.sentry.sentry.login;
 
-import com.sentry.sentry.entity.Userinfo;
 import com.sentry.sentry.security.JwtUtil;
-import com.sentry.sentry.entity.UserinfoRepository;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.aop.scope.ScopedProxyUtils;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -20,59 +24,87 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthenticationManager authManager;
-    private final JwtUtil jwtUtil;
-    private final AuthService authService;
+    private final JwtUtil jwt;
 
-    public AuthController(AuthenticationManager am, JwtUtil ju, AuthService authService) {
-        this.authManager = am; this.jwtUtil = ju; this.authService = authService;
+    public AuthController(AuthenticationManager am, JwtUtil jwt) {
+        this.authManager = am; this.jwt = jwt;
     }
 
     @PostMapping(value = "/login", produces = "application/json")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> req, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
         final String username = req.get("username");
         final String userpassword = req.get("userpassword");
-
-        log.info("[LOGIN-1] 요청 수신 username='{}' pwd_len={}",
-                username, userpassword == null ? null : userpassword.length());
+        log.info("[LOGIN] 요청 username='{}', pwd_len={}", username, userpassword == null ? null : userpassword.length());
 
         try {
-            log.info("[LOGIN-2] AuthenticationManager.authenticate 시작");
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, userpassword)
             );
-            log.info("[LOGIN-3] 인증 성공 name='{}', principalType='{}', authorities={}",
-                    auth.getName(),
-                    auth.getPrincipal() == null ? null : auth.getPrincipal().getClass().getName(),
-                    auth.getAuthorities());
+            log.info("[LOGIN] 인증 성공: name='{}', authorities={}", auth.getName(), auth.getAuthorities());
 
-            String subject = auth.getName(); // 안전하게 이름 사용 (캐스팅 X)
-            String token = jwtUtil.generateToken(subject, Map.of("role", "master"));
-            log.info("[LOGIN-4] 토큰 생성 성공 subject='{}' token_len={}", subject, token.length());
+            // roles를 claims로 넣으면 매 요청 DB조회 없이 권한 복원 가능 (원하면 사용)
+            List<String> roles = List.of("ROLE_USER");
+            String access  = jwt.generateAccessToken(auth.getName(), Map.of("roles", roles));
+            String refresh = jwt.generateRefreshToken(auth.getName(), Map.of("roles", roles));
 
+            // 리프레시 → HttpOnly 쿠키
+            ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refresh)
+                    .httpOnly(true).secure(false)     // HTTPS에선 true
+                    .sameSite("Lax").path("/")
+                    .maxAge(Duration.ofDays(14))
+                    .build();
 
+            log.info("[LOGIN] access_len={}, refresh_len={}", access.length(), refresh.length());
 
-            Userinfo u = authService.getUserinfo(username);
-            session.setAttribute("loginUser", u);
-
-
-            // 프론트와 키 이름을 'accessToken'으로 확정
-            return ResponseEntity.ok(Map.of("accessToken", token));
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(Map.of("accessToken", access));
 
         } catch (BadCredentialsException e) {
-            log.warn("[LOGIN-ERR] BadCredentialsException: {}", e.getMessage());
-            return ResponseEntity.status(401).body(Map.of("error", "BAD_CREDENTIALS"));
-        } catch (DisabledException e) {
-            log.warn("[LOGIN-ERR] DisabledException: {}", e.getMessage());
-            return ResponseEntity.status(403).body(Map.of("error", "USER_DISABLED"));
-        } catch (LockedException e) {
-            log.warn("[LOGIN-ERR] LockedException: {}", e.getMessage());
-            return ResponseEntity.status(423).body(Map.of("error", "USER_LOCKED"));
-        } catch (AuthenticationException e) {
-            log.warn("[LOGIN-ERR] AuthenticationException: {}", e.getMessage());
-            return ResponseEntity.status(401).body(Map.of("error", "AUTH_FAILED"));
+            log.warn("[LOGIN-ERR] BadCredentials: {}", e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
         } catch (Exception e) {
             log.error("[LOGIN-ERR] 서버 오류", e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "SERVER_ERROR"));
+            return ResponseEntity.internalServerError().body(Map.of("error","SERVER_ERROR"));
         }
     }
+
+    @PostMapping(value = "/refresh", produces = "application/json")
+    public ResponseEntity<?> refresh(HttpServletRequest request) {
+        String refresh = readCookie(request, "REFRESH_TOKEN");
+        log.info("[REFRESH] 쿠키 refresh 존재? {}", refresh != null);
+
+        if (refresh == null || !jwt.validate(refresh) || !jwt.isRefreshToken(refresh)) {
+            log.warn("[REFRESH] 리프레시 없음/유효하지 않음");
+            return ResponseEntity.status(401).body(Map.of("error","NO_OR_INVALID_REFRESH"));
+        }
+
+        String username = jwt.getUsername(refresh);
+        log.info("[REFRESH] username={}", username);
+
+        // (선택) 토큰 회전/블랙리스트 체크 로직 위치
+        List<String> roles = List.of("ROLE_USER");
+        String newAccess = jwt.generateAccessToken(username, Map.of("roles", roles));
+
+        log.info("[REFRESH] newAccess_len={}", newAccess.length());
+        return ResponseEntity.ok(Map.of("accessToken", newAccess));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // REFRESH 쿠키 삭제
+        ResponseCookie del = ResponseCookie.from("REFRESH_TOKEN", "")
+                .httpOnly(true).secure(false).sameSite("Lax").path("/")
+                .maxAge(0).build();
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, del.toString())
+                .body(Map.of("result","ok"));
+    }
+
+    private String readCookie(HttpServletRequest req, String name) {
+        Cookie[] cookies = req.getCookies();
+        if (cookies == null) return null;
+        for (Cookie c : cookies) if (name.equals(c.getName())) return c.getValue();
+        return null;
+    }
+
 }
