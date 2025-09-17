@@ -21,11 +21,10 @@ public class AuthController {
 
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
-    private final UserinfoRepository repo;
     private final AuthService authService;
 
-    public AuthController(AuthenticationManager am, JwtUtil ju, UserinfoRepository r, AuthService authService) {
-        this.authManager = am; this.jwtUtil = ju; this.repo = r; this.authService = authService;
+    public AuthController(AuthenticationManager am, JwtUtil ju, AuthService authService) {
+        this.authManager = am; this.jwtUtil = ju; this.authService = authService;
     }
 
     @PostMapping(value = "/login", produces = "application/json")
