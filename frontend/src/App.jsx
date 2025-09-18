@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login.jsx";
 import Home from "./Home.jsx";
+import Chat from './Chat.jsx';
 
 // 보호 라우트: 토큰 없으면 로그인으로
 function RequireAuth({ children }) {
@@ -24,6 +25,8 @@ export default function App() {
                     </RequireAuth>
                 }
             />
+
+            <Route path="/chat" element={<Chat />}/>
 
 
 

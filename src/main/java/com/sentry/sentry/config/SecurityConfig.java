@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // Preflight 허용
                         .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                        .requestMatchers("/chat/**").permitAll()    // 나중에 지우기(테스트용)
+                        .requestMatchers("/room/**").permitAll()    // 나중에 지우기(테스트용)
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
