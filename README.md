@@ -112,9 +112,6 @@
 - **과거 영상 조회(조건 검색/프리뷰/메타)**  
 - **설정(계정·권한·채팅·카메라·분석 정책)**
 
-> 스크린샷 예시 경로: `docs/screenshots/`  
-> - `login.png`, `dashboard.png`, `timeline.png`, `archive.png`, `settings.png`
-
 ---
 
 
