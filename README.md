@@ -19,7 +19,6 @@
 - [목적](#-목적)
 - [역할별 기능](#-역할별-기능)
 - [주요 기능](#-주요-기능)
-- [아키텍처](#-아키텍처)
 - [기술 스택](#-기술-스택)
 - [권한/역할](#-권한역할)
 - [화면 구성](#-화면-구성)
@@ -84,33 +83,7 @@
 4) **과거 영상 조회** — 조건 검색(시간/카메라/유형), 스냅샷/메타 연동, 빠른 탐색  
 5) **관제팀 커뮤니케이션** — 실시간 채팅/멘션/알림, 사건 카드 공유, 담당자 할당
 
----
 
-## 🏗️ 아키텍처
-```mermaid
-flowchart LR
-  subgraph Edge[현장/수집]
-    CAM[CCTV Streams] --> DET[Event Detector*]
-  end
-
-  subgraph BE[Backend - Spring Boot]
-    API[REST API] --- SEC[Spring Security]
-    API --- SCHED[Event Processor]
-    API --- WS[WebSocket Broker]
-    API --- DAO[(MyBatis / MySQL)]
-  end
-
-  subgraph FE[Frontend - React]
-    UI[Dashboard & Settings SPA] --- SOCK[WS Client]
-    UI --- HTTP[Fetch/Axios]
-  end
-
-  DET -- 이벤트/메타 --> API
-  DAO <--> API
-  WS <--> SOCK
-
-  note over DET: *외부/내부 분석 모듈 연동(사람·차량·영역침입 등)
-```
 
 ---
 
