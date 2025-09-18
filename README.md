@@ -165,7 +165,7 @@ npm run dev              # 개발 서버
 
 ## 🧰 배경 기술 (OS & SW)
 - **Frontend:** HTML, CSS, JavaScript, React  
-- **Backend:** Java 17 (Spring Boot), C# *(분석 모듈/연동 파트가 존재 시)*  
+- **Backend:** Java 17 (Spring Boot), C# 
 - **DB/Persistence:** MySQL, MyBatis  
 - **Auth/Security:** Spring Security (RBAC, 비밀번호/잠금 정책)  
 - **Realtime:** WebSocket(STOMP) 기반 채팅/알림  
