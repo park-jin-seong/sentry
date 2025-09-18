@@ -1,73 +1,236 @@
-# 🎥 선별 관제 기반 **영상 모니터링 시스템** — 역할/기능 & 진행 순서
+# 🎥 선별 관제 기반 **영상 모니터링 시스템** (Spring Boot × React)
 
-> 이벤트가 발생한 화면만 선별 표출하고, **실시간 채팅/알림**으로 관제 효율을 높이는 Spring Boot × React 프로젝트의 역할별 기능 정리 문서이다.
+> **이벤트가 발생한 화면만** 선별해 표출하고, **실시간 알림·채팅**으로 관제 효율을 높이는 시스템  
+> “불필요한 모니터링을 줄이고, **빠르게 대응하는 관제**”가 목표입니다.
+
+![badge-backend](https://img.shields.io/badge/Backend-Spring%20Boot%20(JDK%2017)-6DB33F)
+![badge-persistence](https://img.shields.io/badge/Persistence-MyBatis-0F70B7)
+![badge-db](https://img.shields.io/badge/DB-MySQL%208-4479A1)
+![badge-frontend](https://img.shields.io/badge/Frontend-React/HTML/CSS/JS-61DAFB)
+![badge-auth](https://img.shields.io/badge/Auth-Spring%20Security-000000)
+![badge-realtime](https://img.shields.io/badge/Realtime-WebSocket-4B32C3)
+![badge-tools](https://img.shields.io/badge/Tools-GitHub%20%7C%20SourceTree-blue)
 
 ---
 
-## 🧑‍💼 역할별 기능 (Role-based Features)
+## 🧭 목차
+- [배경](#-배경)
+- [주제](#-주제)
+- [목적](#-목적)
+- [역할별 기능](#-역할별-기능)
+- [주요 기능](#-주요-기능)
+- [아키텍처](#-아키텍처)
+- [기술 스택](#-기술-스택)
+- [권한/역할](#-권한역할)
+- [화면 구성](#-화면-구성)
+- [데이터 모델(요약)](#-데이터-모델요약)
+- [간단 API 예시](#-간단-api-예시)
+- [설치 및 실행](#-설치-및-실행)
+- [협업 & 형상관리](#-협업--형상관리)
+- [프로젝트 진행 순서](#-프로젝트-진행-순서)
+- [배경 기술 (OS & SW)](#-배경-기술-os--sw)
+- [외부 연동](#-외부-연동)
+- [체크리스트](#-체크리스트-예시)
+- [성과 및 배운 점](#-성과-및-배운-점예시)
+- [로드맵](#-로드맵)
 
-### 1) **마스터 로그인**
+---
+
+## 📌 배경
+현재 도심 관제 센터는 **수천·수만 대의 CCTV**를 24시간 수동 모니터링해야 해 **중요 이벤트를 놓치기 쉽고**, 인력 피로가 큽니다. 전체 영상 중 대부분은 **의미 없는 장면**이므로 실제 사건 대응에 필요한 정보를 찾는 데 **시간이 과도하게 소요**됩니다.  
+**선별 관제 시스템**은 특정 이벤트가 발생한 화면만 선택적으로 모니터링하여 **관제 효율을 높이고 피로도를 줄이는** 것을 목표로 합니다.
+
+## 🎯 주제
+**영상의 객체·이벤트를 선별**하여 **발생 시에만 화면을 업데이트**하고, **실시간 알림·채팅**으로 관제팀 간 소통을 지원하는 **선별 관제 시스템**을 구현했습니다.
+
+## 🎯 목적
+-  이벤트 발생 시 관제 화면 **실시간 업데이트**
+-  조건(시간/장소/유형)에 맞는 **과거 영상 조회**
+-  관제팀 간 **실시간 채팅 및 알림**
+-  **관리자·담당자·관제사**로 구성된 **유저/권한 관리**
+
+---
+
+## 👤 역할별 기능
+### 1) 마스터 로그인
 #### 1.1 설정
-- **카메라 추가**
-  - 공공데이터 API를 통해 CCTV 메타데이터를 조회하고, 필요한 카메라를 선택하여 시스템에 추가.
-  - 중복 추가 방지/유효성 검사, 그룹/우선순위 태깅 지원.
-- **분석 카메라 할당**
-  - 추가된 카메라 리스트를 **분석 서버**에 할당하여 분석을 시작/중지할 수 있다.
-  - 분석 대상(사람/차량/영역침입 등)과 임계치(Threshold) 설정 지원.
-- **담당자 계정 관리**
-  - 담당자 계정 **추가/수정/삭제** (활성/비활성) 및 역할(Roles) 부여.
-  - 초기 비밀번호/정책 관리(만료/복잡도) 및 잠금 해제.
+- **카메라 추가**  
+  공공데이터 API를 활용해 CCTV 정보를 불러오고, 필요한 카메라를 **선택 후 추가**합니다. 중복 추가 방지·유효성 검사, 그룹/우선순위 태깅을 지원합니다.
+- **분석 카메라 할당**  
+  추가된 카메라 리스트를 **분석 서버에 할당**(분석 시작/중지)합니다. 분석 대상(사람/차량/영역침입 등)과 **임계치(Threshold)** 설정을 지원합니다.
+- **담당자 계정 관리**  
+  마스터는 담당자 계정을 **추가/수정/삭제**(활성/비활성)하고 역할(Role)을 부여합니다. 초기 비밀번호/정책(만료/복잡도) 및 잠금 해제를 관리합니다.
 
----
-
-### 2) **담당자 로그인**
+### 2) 담당자 로그인
 #### 2.1 설정
-- **관제사 계정 관리**
-  - 관제사 계정 **추가/수정/삭제** 및 팀/근무조 매핑.
-- **관제사 계정 카메라 할당**
-  - 관제사에게 **관제 대상 카메라**를 배정/회수하고, 우선순위·필터(긴급/중요/일반)를 지정.
-
+- **관제사 계정 관리**  
+  관제사 계정을 **추가/수정/삭제**하고 **팀/근무조**에 매핑합니다.
+- **관제사 계정 카메라 할당**  
+  관제사에게 **관제 대상 카메라**를 배정/회수하고, 우선순위·필터(긴급/중요/일반)를 지정합니다.
 #### 2.2 검색
-- 이벤트 유형/시간/카메라/중요도 기준으로 **히스토리 검색**이 가능.
-- 결과는 타임라인/표 형태로 제공되며, 스냅샷/상세 메타 연동을 지원.
+- 담당자는 이벤트 유형/시간/카메라/중요도 기준으로 **히스토리 검색**을 사용할 수 있습니다.  
+  결과는 **타임라인/표** 형태로 제공되며, 스냅샷/상세 메타 연동을 지원합니다.
 
----
-
-### 3) **관제사 로그인**
+### 3) 관제사 로그인
 #### 3.1 영상 관제
-- 본인에게 **할당된 카메라**의 선별 화면을 관제.
-- 이벤트 발생 시 타일 자동 갱신, 우선순위에 따른 표출 정렬, 북마크/담당자 지정 기능 제공.
-
+- 본인에게 **할당된 카메라**의 선별 화면을 관제합니다.  
+  이벤트 발생 시 타일 자동 갱신, 우선순위 기반 정렬, **북마크/담당자 지정** 기능을 제공합니다.
 #### 3.2 채팅
-- 팀/담당자와 **실시간 채팅**으로 상황을 공유합니다.
-- @멘션/읽음 상태/브라우저 알림을 지원하며, 사건 카드(URL) 공유가 가능.
+- 팀/담당자와 **실시간 채팅**(WebSocket)으로 상황을 공유합니다.  
+  **@멘션/읽음 상태/브라우저 알림**을 지원하며, **사건 카드 공유(URL)** 가 가능합니다.
 
 ---
 
-## 🧭 진행 순서 (프로젝트 플로우)
-1. **주제 선정 및 요구사항 정리**  
-   - 선별 관제 목표 정의(이벤트 기반 표출, 피로도 감소, 대응 시간 단축)  
-   - 사용자 역할(마스터/담당자/관제사) 및 권한 범위 정의
-2. **개발 환경 구축**  
-   - Backend(Spring Boot, MyBatis, MySQL), Frontend(React) 기본 스캐폴딩  
-   - 인증/인가(Spring Security), WebSocket(채팅/알림) 구성
-3. **화면 및 기능 구현**  
-   - 로그인/권한, 설정(계정·카메라·분석), 관제 대시보드, 검색/타임라인, 채팅
-4. **테스트 및 디버깅**  
-   - 단위/통합 테스트, 시나리오 테스트, 성능 점검(인덱스/쿼리 튜닝)
-5. **배포**  
-   - 환경별 설정 분리(.env, profiles), 로그/모니터링, 롤백 전략
+## 🧩 주요 기능
+1) **인증/인가 (Spring Security)** — 로그인/로그아웃, JWT/세션 보호, 역할(RBAC)별 접근 제어, 실패 횟수 제한, 비밀번호 정책  
+2) **설정(관리)** — 계정·권한 CRUD, **카메라/분석 정책** 관리, 채팅 설정, 표출 정책(우선순위/필터)  
+3) **선별 관제** — 이벤트 발생 시 타일 자동 갱신, 표출 우선순위·필터, 이벤트 히스토리/타임라인  
+4) **과거 영상 조회** — 조건 검색(시간/카메라/유형), 스냅샷/메타 연동, 빠른 탐색  
+5) **관제팀 커뮤니케이션** — 실시간 채팅/멘션/알림, 사건 카드 공유, 담당자 할당
+
+---
+
+## 🏗️ 아키텍처
+```mermaid
+flowchart LR
+  subgraph Edge[현장/수집]
+    CAM[CCTV Streams] --> DET[Event Detector*]
+  end
+
+  subgraph BE[Backend - Spring Boot]
+    API[REST API] --- SEC[Spring Security]
+    API --- SCHED[Event Processor]
+    API --- WS[WebSocket Broker]
+    API --- DAO[(MyBatis / MySQL)]
+  end
+
+  subgraph FE[Frontend - React]
+    UI[Dashboard & Settings SPA] --- SOCK[WS Client]
+    UI --- HTTP[Fetch/Axios]
+  end
+
+  DET -- 이벤트/메타 --> API
+  DAO <--> API
+  WS <--> SOCK
+
+  note over DET: *외부/내부 분석 모듈 연동(사람·차량·영역침입 등)
+```
+
+---
+
+## 🔧 기술 스택
+- **Frontend:** React, React Router, Context/Custom Hooks, Fetch/Axios, HTML, CSS, JavaScript  
+- **Backend:** Java 17, Spring Boot, Spring MVC, **Spring Security**, Validation, Scheduling  
+- **Persistence:** **MyBatis**, MySQL, HikariCP  
+- **Realtime:** WebSocket(STOMP) / Server-Sent Events(옵션)  
+- **Infra/툴:** npm, Gradle/Maven, GitHub, **SourceTree (2·3차 프로젝트에서 사용)**
+
+---
+
+## 🔐 권한/역할
+| 역할 | 권한 요약 | 주요 화면 접근 |
+|---|---|---|
+| **관리자(Admin/마스터)** | 사용자/권한/채널/분석 정책 **전체 관리** | 설정 전역, 관제, 로그/이력 |
+| **담당자(Manager)** | 관제사 계정/카메라 **배정/회수**, 검색 | 팀 설정, 모니터링, 과거 조회 |
+| **관제사(Operator)** | 관제/조회/채팅 **업무 중심** | 대시보드, 타임라인, 채팅 |
+
+---
+
+## 🖥 화면 구성
+- **로그인/권한 안내**  
+- **대시보드(선별 타일, 우선순위 필터, 실시간 카운터)**  
+- **타임라인(이벤트 히스토리/검색/필터)**  
+- **과거 영상 조회(조건 검색/프리뷰/메타)**  
+- **설정(계정·권한·채팅·카메라·분석 정책)**
+
+> 스크린샷 예시 경로: `docs/screenshots/`  
+> - `login.png`, `dashboard.png`, `timeline.png`, `archive.png`, `settings.png`
+
+---
+
+## 🗂 데이터 모델(요약)
+- **users / roles / user_roles** — 계정·권한 매핑  
+- **cameras / camera_groups** — 채널/그룹·우선순위  
+- **events** — 이벤트 메타(타입/시각/채널/중요도/스냅샷)  
+- **chat_rooms / chat_messages** — 팀·멘션·알림  
+- **policies** — 분석/표출/알림 정책(버전/이력)
+
+> 정규화(3NF)와 **복합 인덱스**로 조회 성능 개선, `EXPLAIN` 기반 튜닝
+
+---
+
+## 🔌 간단 API 예시
+```http
+POST /api/auth/login                # 로그인 (Spring Security)
+GET  /api/events?type=PERSON&from=...&to=...&priority=HIGH
+GET  /api/events/{id}               # 이벤트 상세/메타
+GET  /api/archive?cameraId=...&from=...&to=...
+GET  /api/cameras                   # 카메라 목록/그룹/우선순위
+PUT  /api/settings/chat             # 채팅 설정 CRUD
+POST /api/accounts                  # 계정 생성 (관리자)
+PUT  /api/accounts/{id}/role        # 권한 변경 (관리자)
+WS   /ws/chat, /ws/alert            # 실시간 채팅/알림
+```
+
+---
+
+## ⚙️ 설치 및 실행
+### 1) 프로젝트 구조(예시)
+```
+/project-root
+ ├─ backend/            # Spring Boot (API, Security, MyBatis)
+ ├─ frontend/           # React (SPA, WebSocket Client)
+ └─ docs/
+    └─ screenshots/
+```
+
+### 2) Backend (Spring Boot)
+```bash
+cd backend
+# application.yml(.properties) 에 DB 연결정보 설정
+# spring.datasource.url=jdbc:mysql://localhost:3306/monitoring?serverTimezone=Asia/Seoul
+# spring.datasource.username=...
+# spring.datasource.password=...
+
+./mvnw spring-boot:run   # 또는 ./gradlew bootRun
+```
+
+### 3) Frontend (React)
+```bash
+cd frontend
+npm install
+# .env 예시
+# REACT_APP_API_BASE=http://localhost:8080
+# REACT_APP_WS_BASE=ws://localhost:8080/ws
+npm run dev              # 개발 서버
+```
+
+---
+
+## 🤝 협업 & 형상관리
+- **GitHub** — PR 기반 코드리뷰, 이슈/프로젝트 보드로 작업 추적, 릴리스 노트 관리  
+- **SourceTree (2·3차 프로젝트)** — 브랜치 전략(feature/bugfix), 리베이스·충돌 해결, 커밋 그래프 시각화
+
+---
+
+## 📅 프로젝트 진행 순서
+1. **주제 선정 및 요구사항 정리** — 선별 관제 목표 정의(이벤트 기반 표출, 피로도 감소, 대응 시간 단축), 역할/권한 설계  
+2. **개발 환경 구축** — Backend(Spring Boot, MyBatis, MySQL), Frontend(React), 인증/인가(Spring Security), WebSocket 구성  
+3. **화면 및 기능 구현** — 로그인/권한, 설정(계정·카메라·분석), 관제 대시보드, 검색/타임라인, 채팅  
+4. **테스트 및 디버깅** — 단위/통합/시나리오 테스트, 성능 점검(인덱스/쿼리 튜닝)  
+5. **배포** — 환경별 설정 분리(profiles/.env), 로그/모니터링, 롤백 전략
 
 ---
 
 ## 🧰 배경 기술 (OS & SW)
 - **Frontend:** HTML, CSS, JavaScript, React  
-- **Backend:** Java 17 (Spring Boot), C#(분석 모듈/연동 파트가 존재하는 경우)  
+- **Backend:** Java 17 (Spring Boot), C# *(분석 모듈/연동 파트가 존재 시)*  
 - **DB/Persistence:** MySQL, MyBatis  
 - **Auth/Security:** Spring Security (RBAC, 비밀번호/잠금 정책)  
 - **Realtime:** WebSocket(STOMP) 기반 채팅/알림  
 - **형상관리:** GitHub, SourceTree
 
+> ※ C#은 분석 엔진 또는 외부 연동 모듈이 C# 기반일 경우를 가정한 선택지입니다. 실제 구성에 맞춰 수정하세요.
 
 ---
 
@@ -75,14 +238,17 @@
 - **공공데이터 API – CCTV 메타데이터**: 지역/설치 위치/채널 정보를 조회하여 카메라 추가 시 활용  
 - **분석 서버 연동**: 카메라 할당/해제, 분석 대상/임계치 업데이트, 상태 모니터링
 
-
 ---
 
-## 📎 부록 (권한 요약)
-| 역할 | 주요 권한 | 대표 화면 |
-|---|---|---|
-| **마스터** | 계정/권한/카메라/분석 정책 전체 관리 | 설정 전역, 관제, 로그 |
-| **담당자** | 관제사 계정/카메라 배정, 검색 | 설정(팀 범위), 검색/타임라인 |
-| **관제사** | 관제/채팅/이벤트 확인 | 대시보드, 타임라인, 채팅 |
+
+## 📈 성과 및 배운 점(예시)
+- **선별 표출**로 불필요 화면 노출 감소 → **관제 피로 저감**
+- 이벤트 **타임라인/필터**로 **대응 시간 단축**
+- Spring Security 기반 **역할별 접근제어** 정립, 운영 보안성 향상
+- MyBatis 튜닝(인덱스/복합 키)으로 **조건 조회 속도 개선**
+
+> 실제 수치(예: 조회 응답시간, 화면 전환속도, 오류율)는 운영 환경에 맞게 추가하세요.
+
+
 
 
