@@ -1,7 +1,7 @@
 # 🎥 선별 관제 기반 **영상 모니터링 시스템** (Spring Boot × React)
 
 > **이벤트가 발생한 화면만** 선별해 표출하고, **실시간 알림·채팅**으로 관제 효율을 높이는 시스템  
-> “불필요한 모니터링을 줄이고, **빠르게 대응하는 관제**”가 목표입니다.
+> “불필요한 모니터링을 줄이고, **빠르게 대응하는 관제**”가 목표이다.
 
 ![badge-backend](https://img.shields.io/badge/Backend-Spring%20Boot%20(JDK%2017)-6DB33F)
 ![badge-persistence](https://img.shields.io/badge/Persistence-MyBatis-0F70B7)
@@ -187,7 +187,6 @@ npm run dev              # 개발 서버
 - Spring Security 기반 **역할별 접근제어** 정립, 운영 보안성 향상
 - MyBatis 튜닝(인덱스/복합 키)으로 **조건 조회 속도 개선**
 
-> 실제 수치(예: 조회 응답시간, 화면 전환속도, 오류율)는 운영 환경에 맞게 추가하세요.
 
 
 
