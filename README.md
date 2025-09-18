@@ -23,16 +23,12 @@
 - [기술 스택](#-기술-스택)
 - [권한/역할](#-권한역할)
 - [화면 구성](#-화면-구성)
-- [데이터 모델(요약)](#-데이터-모델요약)
-- [간단 API 예시](#-간단-api-예시)
 - [설치 및 실행](#-설치-및-실행)
 - [협업 & 형상관리](#-협업--형상관리)
 - [프로젝트 진행 순서](#-프로젝트-진행-순서)
 - [배경 기술 (OS & SW)](#-배경-기술-os--sw)
 - [외부 연동](#-외부-연동)
-- [체크리스트](#-체크리스트-예시)
 - [성과 및 배운 점](#-성과-및-배운-점예시)
-- [로드맵](#-로드맵)
 
 ---
 
@@ -148,31 +144,6 @@ flowchart LR
 
 ---
 
-## 🗂 데이터 모델(요약)
-- **users / roles / user_roles** — 계정·권한 매핑  
-- **cameras / camera_groups** — 채널/그룹·우선순위  
-- **events** — 이벤트 메타(타입/시각/채널/중요도/스냅샷)  
-- **chat_rooms / chat_messages** — 팀·멘션·알림  
-- **policies** — 분석/표출/알림 정책(버전/이력)
-
-> 정규화(3NF)와 **복합 인덱스**로 조회 성능 개선, `EXPLAIN` 기반 튜닝
-
----
-
-## 🔌 간단 API 예시
-```http
-POST /api/auth/login                # 로그인 (Spring Security)
-GET  /api/events?type=PERSON&from=...&to=...&priority=HIGH
-GET  /api/events/{id}               # 이벤트 상세/메타
-GET  /api/archive?cameraId=...&from=...&to=...
-GET  /api/cameras                   # 카메라 목록/그룹/우선순위
-PUT  /api/settings/chat             # 채팅 설정 CRUD
-POST /api/accounts                  # 계정 생성 (관리자)
-PUT  /api/accounts/{id}/role        # 권한 변경 (관리자)
-WS   /ws/chat, /ws/alert            # 실시간 채팅/알림
-```
-
----
 
 ## ⚙️ 설치 및 실행
 ### 1) 프로젝트 구조(예시)
@@ -230,7 +201,6 @@ npm run dev              # 개발 서버
 - **Realtime:** WebSocket(STOMP) 기반 채팅/알림  
 - **형상관리:** GitHub, SourceTree
 
-> ※ C#은 분석 엔진 또는 외부 연동 모듈이 C# 기반일 경우를 가정한 선택지입니다. 실제 구성에 맞춰 수정하세요.
 
 ---
 
