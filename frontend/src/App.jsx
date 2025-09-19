@@ -1,36 +1,30 @@
-// src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./Login.jsx";
+// App.jsx
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth.jsx"; // 확장자 맞추기!
 import Home from "./Home.jsx";
+import Settings from "./Settings.jsx";
+import Login from "./Login.jsx";
 import Chat from './Chat.jsx';
 
-// 보호 라우트: 토큰 없으면 로그인으로
-function RequireAuth({ children }) {
-    const authed = !!localStorage.getItem("accessToken");
-    return authed ? children : <Navigate to="/login" replace />;
+function RequireAuth() {
+    const { me, loading } = useAuth();
+    if (loading) return <div style={{ padding: 24 }}>확인 중…</div>;
+    if (!me) return <Navigate to="/login" replace />;
+    return <Outlet />;
 }
-
 
 export default function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<Login />} />
-
-            <Route
-                path="/home"
-                element={
-                    <RequireAuth>
-                        <Home />
-                    </RequireAuth>
-                }
-            />
-
-            <Route path="/chat" element={<Chat />}/>
-
-
-
-            <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+        <AuthProvider>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route element={<RequireAuth />}>
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/settings" element={<Settings />} />
+                </Route>
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        </AuthProvider>
     );
 }

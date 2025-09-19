@@ -8,7 +8,7 @@ export default defineConfig({
         global: 'window',
     },
     server: {
-        port: 5174,
+        port: 5188,
         proxy: {
             "/api": {
                 target: "http://localhost:8080",

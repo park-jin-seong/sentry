@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
 import './Home.css';
 import Chat from './Chat'; // 1. Chat 컴포넌트 임포트
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "./auth.jsx";
+import { api } from "./lib/api.js";
 
 const Home = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { me, loading } = useAuth();
+    const navigate = useNavigate();
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
+    };
+    const onLogout = async () => {
+        try { await api("/api/auth/logout", { method: "POST" }); }
+        finally {
+            api.clearAccessToken?.();
+            navigate("/login", { replace: true });
+        }
     };
 
     return (
@@ -19,8 +31,8 @@ const Home = () => {
                 <nav className="nav-menu">
                     <a href="#" className="nav-item">검색</a>
                     <a href="#" className="nav-item active">도움말</a>
-                    <a href="#" className="nav-item">설정</a>
-                    <a href="#" className="nav-item">로그아웃</a>
+                    <a href="#" className="nav-item" onClick={() => navigate("/settings")}>설정</a>
+                    <a href="#" className="nav-item" onClick={onLogout} >로그아웃</a>
                 </nav>
             </header>
 
