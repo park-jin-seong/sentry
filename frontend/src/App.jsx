@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./auth.jsx"; // 확장자 맞추기!
 import Home from "./Home.jsx";
 import Settings from "./Settings.jsx";
 import Login from "./Login.jsx";
+import Chat from './Chat.jsx';
 
 function RequireAuth() {
     const { me, loading } = useAuth();

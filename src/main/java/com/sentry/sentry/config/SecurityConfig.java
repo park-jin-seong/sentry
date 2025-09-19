@@ -89,6 +89,9 @@ public class SecurityConfig {
                         // 인증 없이 접근 가능한 인증 관련 API
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         // 그 외 모든 요청은 인증 필요
+                        .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
+                        .requestMatchers("/chat/**").permitAll()    // 나중에 지우기(테스트용)
+                        .requestMatchers("/room/**").permitAll()    // 나중에 지우기(테스트용)
                         .anyRequest().authenticated()
                 )
 

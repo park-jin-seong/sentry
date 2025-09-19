@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
+import java.util.List;
 
 @Entity
 @Table(name = "userinfo")
@@ -11,8 +12,8 @@ import lombok.ToString;
 public class Userinfo {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "username", length = 45, nullable = false, unique = true)
@@ -26,4 +27,7 @@ public class Userinfo {
     @Column(name = "nickname", length = 255, nullable = false, unique = true)
     private String nickname;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<RoomUser> roomUsers;
 }

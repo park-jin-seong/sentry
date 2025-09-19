@@ -1,4 +1,4 @@
-package com.sentry.sentry.chat;
+package com.sentry.sentry.entity;
 
 import com.sentry.sentry.entity.Userinfo;
 import jakarta.persistence.*;

@@ -1,11 +1,13 @@
-package com.sentry.sentry.chat;
+package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "room")
@@ -28,4 +30,11 @@ public class Room {
     @Column(name = "last_message_sent_at")
     private LocalDateTime lastMessageSentAt;
 
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<RoomUser> roomUsers;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<Message> messages;
 }
