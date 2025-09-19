@@ -2,30 +2,67 @@ import React, { useState, useEffect, useRef } from 'react';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import axios from 'axios';
+import throttle from 'lodash/throttle';
+import {Virtuoso} from "react-virtuoso";
+import './Chat.css';
+import Message from './Message';
+
+const currentUserId = 1;
 
 const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
     const stompClientRef = useRef(null);
     const chatContainerRef = useRef(null);
+
     const isScrolledToBottom = useRef(true);
+    const isLoadingMessages = useRef(false);
+    const prevScrollHeight = useRef(null);
+    const [hasMore, setHasMore] = useState(true);
+
+    const messagesRef = useRef(messages);
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
+    const fetchMessages = async (lastMessageId) => {
+        if (isLoadingMessages.current || !hasMore) return;
+        isLoadingMessages.current = true;
+
+        if (lastMessageId) {
+            prevScrollHeight.current = chatContainerRef.current.scrollHeight;
+        }
+
+        try {
+            const response = await axios.get('http://localhost:8080/room/1', {
+                params: { lastMessageId: lastMessageId }
+            });
+
+            const newMessages = response.data.content;
+            setHasMore(!response.data.last);
+
+            if (newMessages.length > 0) {
+                setMessages(prevMessages => [...prevMessages, ...newMessages]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch messages:", error);
+        } finally {
+            isLoadingMessages.current = false;
+        }
+    };
 
     useEffect(() => {
-        const fetchPastMessages = async () => {
-            try {
-                const response = await axios.get('http://localhost:8080/room/1');
-                setMessages(response.data.content.reverse());
-            } catch (error) {
-                console.error("Failed to fetch past messages:", error);
-            }
-        };
-        fetchPastMessages();
+        fetchMessages(null);
     }, []);
 
     useEffect(() => {
         if (messages.length > 0 && chatContainerRef.current) {
             if (isScrolledToBottom.current) {
                 chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+            } else if (prevScrollHeight.current !== null) {
+                const newScrollHeight = chatContainerRef.current.scrollHeight;
+                chatContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight.current;
+                prevScrollHeight.current = null;
             }
         }
     }, [messages]);
@@ -35,20 +72,26 @@ const Chat = () => {
         if (!chatDiv) return;
 
         const handleScroll = () => {
-            const { scrollTop, scrollHeight, clientHeight } = chatDiv;
-            if (scrollTop + clientHeight >= scrollHeight - 5) {
-                isScrolledToBottom.current = true;
-            } else {
-                isScrolledToBottom.current = false;
+            const { scrollTop } = chatDiv;
+
+            if (scrollTop <= 5 && !isLoadingMessages.current && hasMore) {
+                const lastMessage = messagesRef.current[messagesRef.current.length - 1];
+                const lastMessageId = lastMessage?.messageId;
+
+                if (lastMessageId) {
+                    fetchMessages(lastMessageId);
+                }
             }
+            isScrolledToBottom.current = (chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight < 5);
         };
 
-        chatDiv.addEventListener('scroll', handleScroll);
+        const throttledHandleScroll = throttle(handleScroll, 200);
+        chatDiv.addEventListener('scroll', throttledHandleScroll);
 
         return () => {
-            chatDiv.removeEventListener('scroll', handleScroll);
+            chatDiv.removeEventListener('scroll', throttledHandleScroll);
         };
-    }, []);
+    }, [hasMore]);
 
     useEffect(() => {
         const serverUrl = 'http://localhost:8080/chat';
@@ -69,7 +112,7 @@ const Chat = () => {
                     if (isOptimistic) {
                         return prevMessages.map(msg => msg.optimisticId === messageBody.optimisticId ? messageBody : msg);
                     } else {
-                        return [...prevMessages, messageBody];
+                        return [messageBody, ...prevMessages];
                     }
                 });
             });
@@ -87,9 +130,9 @@ const Chat = () => {
     const sendMessage = () => {
         const publishUrl = '/send/1';
         const roomId = 1;
-        const senderId = 1;
-        const senderNickname = '(로그인 구현 전 임시 닉네임)';
-        const optimisticId = Date.now(); // 임시 ID 생성
+        const senderId = currentUserId;
+        const senderNickname = '(임시 닉네임)';
+        const optimisticId = Date.now();
 
         if (messageInput.trim() && stompClientRef.current) {
             const messageDTO = {
@@ -101,30 +144,32 @@ const Chat = () => {
 
             const tmpMessage = {
                 optimisticId: optimisticId,
+                senderId: senderId,
                 senderNickname: senderNickname,
                 content: messageInput,
                 createdAt: new Date().toISOString()
             };
-            setMessages(prevMessages => [...prevMessages, tmpMessage]);
+            setMessages(prevMessages => [tmpMessage, ...prevMessages]);
 
             stompClientRef.current.send(publishUrl, {}, JSON.stringify(messageDTO));
             setMessageInput('');
         }
     };
 
+
+
     return (
-        <div>
-            <div ref={chatContainerRef} style={{ border: '1px solid #ccc', height: '300px', overflowY: 'auto', padding: '10px' }}>
-                {messages.map((msg) => (
-                    <p key={msg.messageId || msg.optimisticId}>
-                        <strong>{msg.senderNickname}</strong>: {msg.content}
-                        <span style={{ fontSize: '0.8em', color: '#888' }}>
-                            &nbsp;({new Date(msg.createdAt).toLocaleString()})
-                        </span>
-                    </p>
+        <div className="chat-container">
+            <div className="chat-messages" ref={chatContainerRef}>
+                {messages.slice().reverse().map((msg) => (
+                    <Message
+                        key={msg.messageId || msg.optimisticId}
+                        msg={msg}
+                        currentUserId={currentUserId}
+                    />
                 ))}
             </div>
-            <div style={{ marginTop: '10px' }}>
+            <div className="chat-input-area">
                 <input
                     type="text"
                     id="messageInput"
@@ -132,7 +177,9 @@ const Chat = () => {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                 />
-                <button onClick={sendMessage}>전송</button>
+                <button onClick={sendMessage}>
+                    전송
+                </button>
             </div>
         </div>
     );

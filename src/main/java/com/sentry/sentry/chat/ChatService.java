@@ -36,7 +36,7 @@ public class ChatService {
     public Slice<MessageDTO> getMessagesByRoomId(Long roomId, Long lastMessageId, Pageable pageable) {
         Slice<Message> messages;
         if (lastMessageId == null) {
-            messages = chatRepository.findByRoomIdOrderByCreatedAtDesc(roomId, pageable);
+            messages = chatRepository.findByRoomIdOrderByMessageIdDesc(roomId, pageable);
         } else {
             messages = chatRepository.findByRoomIdAndMessageIdLessThanOrderByMessageIdDesc(roomId, lastMessageId, pageable);
         }

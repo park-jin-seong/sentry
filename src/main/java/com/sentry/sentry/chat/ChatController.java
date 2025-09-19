@@ -27,8 +27,8 @@ public class ChatController {
     @MessageMapping("/{roomId}")
     @SendTo("/room/{roomId}")
     public MessageDTO sendMessage(@Payload MessageDTO messageDTO) {
-//        messageDTO.setCreatedAt(LocalDateTime.now());
-//        chatService.saveMessage(messageDTO.getRoomId(), messageDTO.getSenderId(), messageDTO.getContent());
+//      messageDTO.setCreatedAt(LocalDateTime.now());
+//      chatService.saveMessage(messageDTO.getRoomId(), messageDTO.getSenderId(), messageDTO.getContent());
         messageDTO.setCreatedAt(LocalDateTime.now());
         Message savedMessage = chatService.saveMessage(messageDTO);
         MessageDTO returnMessageDTO = chatService.convertMessageDTO(savedMessage);

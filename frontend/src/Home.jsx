@@ -55,7 +55,6 @@ const Home = () => {
                     <div className="toggle-icon">...</div>
                 </button>
                 <div className="bar-content">
-                    <h2>채팅</h2>
                     <div className="chat-content-area">
                         {isSidebarOpen && <Chat />}
                     </div>
