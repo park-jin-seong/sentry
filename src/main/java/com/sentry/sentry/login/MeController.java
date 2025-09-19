@@ -26,4 +26,9 @@ public class MeController {
                         .toList()
         );
     }
+
+    @GetMapping("/test")
+    public String test(@AuthenticationPrincipal(expression="username") String username) {
+        return username;
+    }
 }

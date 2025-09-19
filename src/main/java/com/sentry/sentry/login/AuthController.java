@@ -36,14 +36,16 @@ public class AuthController {
         final String userpassword = req.get("userpassword");
         log.info("[LOGIN] 요청 username='{}', pwd_len={}", username, userpassword == null ? null : userpassword.length());
 
+        System.out.println("username:"+username);
+
         try {
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, userpassword)
             );
             log.info("[LOGIN] 인증 성공: name='{}', authorities={}", auth.getName(), auth.getAuthorities());
 
-            // roles를 claims로 넣으면 매 요청 DB조회 없이 권한 복원 가능 (원하면 사용)
-            List<String> roles = List.of("ROLE_USER");
+            // roles를 claims로 넣으면 매 요청 DB조회 없이 권한 복원 가능
+            List<String> roles = List.of("ROLE_MASTER");
             String access  = jwt.generateAccessToken(auth.getName(), Map.of("roles", roles));
             String refresh = jwt.generateRefreshToken(auth.getName(), Map.of("roles", roles));
 
@@ -106,5 +108,9 @@ public class AuthController {
         for (Cookie c : cookies) if (name.equals(c.getName())) return c.getValue();
         return null;
     }
+
+
+
+
 
 }

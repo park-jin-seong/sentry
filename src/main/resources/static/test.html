@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Auth Test</title>
+<div>
+    <input id="u" value="owner" placeholder="username" />
+    <input id="p" type="password" value="123456" placeholder="password" />
+    <button id="login">Login</button>
+    <button id="who">/api/myname</button>
+    <pre id="out"></pre>
+</div>
+<script>
+    let accessToken = null;
+    const out = (x) => document.getElementById('out').textContent += x + "\n";
+
+    // 로그인: /api/auth/login (permitAll)
+    document.getElementById('login').onclick = async () => {
+        const body = JSON.stringify({
+            username: document.getElementById('u').value,
+            userpassword: document.getElementById('p').value
+        });
+        const r = await fetch('/api/auth/login', { // ← 여기!
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // refresh 쿠키 받기
+            body
+        });
+        const data = await r.json().catch(() => ({}));
+        out(`[LOGIN] ${r.status} ${r.ok} ${JSON.stringify(data)}`);
+        if (r.ok && data.accessToken) accessToken = data.accessToken;
+    };
+
+    // /api/test (Authorization 필요)
+    document.getElementById('who').onclick = async () => {
+        const r = await fetch('/api/test', { // 최종 경로는 /api/test
+            headers: accessToken ? { Authorization: 'Bearer ' + accessToken } : {}
+        });
+        const txt = await r.text();
+        out(`[MYNAME] ${r.status} ${r.ok} ${txt}`);
+    };
+</script>
+

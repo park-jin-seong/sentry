@@ -114,9 +114,6 @@ export default function Login() {
                         <button type="submit" className="login-btn" disabled={loading}>
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
-                        <button type="button" className="login-btn" onClick={() => {}}>
-                            회원가입
-                        </button>
                     </form>
                 </div>
 

@@ -80,6 +80,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // 에러/루트/파비콘 및 템플릿 진입점 허용
                         .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
+                           // 개발용 테스트 페이지 및 모든 html 허용
+                           .requestMatchers("/test", "/test.html").permitAll()
+//                          .requestMatchers(HttpMethod.GET, "/**/*.html").permitAll()
                         // 인증 없이 접근 가능한 인증 관련 API
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         // 그 외 모든 요청은 인증 필요
