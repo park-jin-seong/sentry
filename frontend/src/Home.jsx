@@ -9,7 +9,6 @@ export default function Home() {
 
     useEffect(() => {
         let mounted = true;
-
         const peek = api.peekAccessToken?.();
         console.log("[Home] mount. accessToken?", !!peek, peek ? peek.slice(0, 20) + "…" : null);
 
@@ -19,7 +18,6 @@ export default function Home() {
                 const res = await api("/api/me");
                 console.log("[Home] /api/me status:", res.status, "ok:", res.ok);
 
-                // 응답 바디 한 번 미리 찍어보기 (원본은 clone이라 소비 안 됨)
                 let preview;
                 try { preview = await res.clone().json(); }
                 catch { try { preview = await res.clone().text(); } catch { preview = "<no body>"; } }
@@ -36,7 +34,6 @@ export default function Home() {
                 if (mounted) setMe(data);
             } catch (e) {
                 console.error("[Home] fetch error (network only):", e);
-                // navigate("/login", { replace: true });
             } finally {
                 if (mounted) {
                     setLoading(false);
@@ -62,18 +59,24 @@ export default function Home() {
         }
     };
 
+    const goSettings = () => {
+        console.log("[Home] navigate -> /settings");
+        navigate("/settings");  // 여기서 설정 페이지로 이동
+    };
+
     return (
         <div style={{ padding: 24 }}>
             <h1>홈</h1>
             {loading && <p>불러오는 중…</p>}
-            {!loading && me && (
-                <pre style={{ background: "#f6f7f9", padding: 12, borderRadius: 8 }}>
-{JSON.stringify(me, null, 2)}
-        </pre>
-            )}
             <button type="button" className="login-btn" onClick={onLogout}>
                 로그아웃
             </button>
+
+            <div>
+                <button type="button" className="setting" onClick={goSettings}>
+                    setting
+                </button>
+            </div>
         </div>
     );
 }

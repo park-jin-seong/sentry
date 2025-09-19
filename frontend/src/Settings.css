@@ -1,0 +1,47 @@
+:root{
+    --bg:#2f3640; --bg-deeper:#2b313a; --panel:#3a414c;
+    --txt:#e8edf3; --muted:#9aa3ad; --accent:#1c7e91; --danger:#d35b5b;
+    --ring:#4a5666;
+}
+
+.st-wrap{display:flex; height:100vh; background:var(--bg); color:var(--txt);}
+
+.st-aside{width:240px; background:var(--bg-deeper); padding:20px 16px; box-shadow: inset -1px 0 0 #00000022;}
+.st-logo{font-weight:800; letter-spacing:1px; margin-bottom:16px;}
+.st-sec-title{font-size:12px; color:var(--muted); margin-top:12px; margin-bottom:6px;}
+.mt24{margin-top:24px;}
+
+.st-nav{display:flex; flex-direction:column; gap:6px; margin-bottom:8px;}
+.st-nav-item{padding:10px 12px; border-radius:8px; color:var(--txt); text-decoration:none; opacity:.85;}
+.st-nav-item:hover{background:#ffffff10;}
+.st-nav-item.active{background:#ffffff18; font-weight:600;}
+
+.st-main{flex:1; padding:28px;}
+
+.st-panel{max-width:720px;}
+.st-h1{font-size:22px; font-weight:700; margin-bottom:16px;}
+
+.st-form{display:grid; grid-template-columns:1fr; gap:12px; max-width:420px;}
+.st-label{font-size:12px; color:var(--muted);}
+.st-input{background:var(--panel); border:1px solid transparent; color:var(--txt);
+    border-radius:10px; padding:10px 12px; outline:none;}
+.st-input:focus{border-color:var(--ring);}
+
+.st-pwbox{position:relative;}
+.st-input.pw{padding-right:44px;}
+.st-eye{position:absolute; top:50%; right:6px; transform:translateY(-50%);
+    width:32px; height:32px; border:none; border-radius:8px; background:#ffffff12; color:#fff; cursor:pointer;}
+.st-eye:hover{background:#ffffff20;}
+
+.st-primary{margin-top:8px; background:var(--accent); color:#fff; border:none; padding:10px 14px;
+    border-radius:8px; cursor:pointer; font-weight:600;}
+.st-primary:hover{filter:brightness(1.05);}
+
+.st-card{border-radius:12px; padding:16px; max-width:560px;}
+.st-h3{font-size:16px; margin-bottom:8px;}
+.st-ul{margin:8px 0 12px 0; padding-left:18px; color:#d5dbe3;}
+.st-row{display:flex; gap:8px;}
+.st-btn{background:#ffffff12; color:#fff; border:none; padding:10px 12px; border-radius:8px; cursor:pointer;}
+.st-btn:hover{background:#ffffff20;}
+.st-btn.danger{background:var(--danger);}
+.st-btn.danger:hover{filter:brightness(1.05);}

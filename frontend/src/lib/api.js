@@ -1,74 +1,89 @@
+// lib/api.js
 let accessToken = null;
+let refreshingPromise = null;
 
-function setAccessToken(token) {
-    accessToken = token || null;
-}
-function clearAccessToken() {
-    accessToken = null;
-}
+function setAccessToken(token) { accessToken = token || null; }
+function clearAccessToken() { accessToken = null; }
 
 function isAuthPath(path) {
-    // 인증 관련 엔드포인트는 Authorization 헤더를 붙이지 않음
-    return (
-        typeof path === "string" &&
-        (path.startsWith("/api/auth/login") ||
-            path.startsWith("/api/auth/refresh") ||
-            path.startsWith("/api/auth/logout"))
+    return typeof path === "string" && (
+        path.startsWith("/api/auth/login") ||
+        path.startsWith("/api/auth/refresh") ||
+        path.startsWith("/api/auth/logout")
     );
 }
 
-api.peekAccessToken = () => accessToken;   // 메모리 토큰 들여다보기용
-if (typeof window !== "undefined") window.api = api;  // 콘솔에서 window.api로 접근
-
-
-/** 공통 fetch: 401이면 /api/auth/refresh 시도 후 원요청 1회 재시도 */
-async function api(input, init = {}) {
-    const headers = new Headers(init.headers || {});
-
-    // body 있을 때만 Content-Type 기본값 설정
-    if (init.body && !headers.has("Content-Type")) {
-        headers.set("Content-Type", "application/json");
+function pathFromInput(input) {
+    if (typeof input === "string") return input;
+    if (input && typeof input.url === "string") {
+        try { return new URL(input.url, window.location.origin).pathname; }
+        catch { return input.url; }
     }
-
-    // 인증 경로가 아니고, 메모리 토큰이 있으면 Authorization 부착
-    if (!isAuthPath(input) && accessToken && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${accessToken}`);
-    }
-
-    const base = { credentials: "include" }; // refresh HttpOnly 쿠키 사용
-
-    const first = await fetch(input, { ...base, ...init, headers });
-    if (first.status !== 401 || isAuthPath(input)) {
-        return first; // 로그인/리프레시/로그아웃은 재시도 불필요
-    }
-
-    // 401 → refresh
-    const r = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
-    if (!r.ok) {
-        clearAccessToken();
-        return first;
-    }
-
-    const data = await r.json().catch(() => null);
-    if (!data?.accessToken) {
-        clearAccessToken();
-        return first;
-    }
-
-    // 새 access 토큰 갱신(메모리)
-    accessToken = data.accessToken;
-
-    // 원요청 재시도
-    const retryHeaders = new Headers(init.headers || {});
-    if (init.body && !retryHeaders.has("Content-Type")) {
-        retryHeaders.set("Content-Type", "application/json");
-    }
-    retryHeaders.set("Authorization", `Bearer ${accessToken}`);
-
-    return fetch(input, { ...base, ...init, headers: retryHeaders });
+    return "";
 }
 
+// JWT payload 디코더
+function decodeJwtPayload(token) {
+    try {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const json = decodeURIComponent(
+            atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
+        );
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
+}
+
+// refresh를 동시에 한 번만 수행
+async function refreshTokenOnce() {
+    if (refreshingPromise) return refreshingPromise;
+    refreshingPromise = (async () => {
+        const r = await fetch("/api/auth/refresh", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!r.ok) { clearAccessToken(); throw new Error("refresh failed"); }
+        const data = await r.json().catch(() => null);
+        if (!data?.accessToken) { clearAccessToken(); throw new Error("no accessToken"); }
+        setAccessToken(data.accessToken);
+        return data.accessToken;
+    })();
+    try { return await refreshingPromise; }
+    finally { refreshingPromise = null; }
+}
+
+/** 공통 fetch: 401이면 refresh 후 1회 재시도 */
+async function api(input, init = {}) {
+    const headers = new Headers(init.headers || {});
+    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    const reqPath = pathFromInput(input);
+    if (!isAuthPath(reqPath) && accessToken && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+    const base = { credentials: "include" };
+
+    const first = await fetch(input, { ...base, ...init, headers });
+    if (first.status !== 401 || isAuthPath(reqPath) || init.__retried) return first;
+
+    try { await refreshTokenOnce(); }
+    catch { return first; } // refresh 실패 → 상위에서 처리
+
+    const retryHeaders = new Headers(init.headers || {});
+    if (init.body && !retryHeaders.has("Content-Type")) retryHeaders.set("Content-Type", "application/json");
+    if (accessToken) retryHeaders.set("Authorization", `Bearer ${accessToken}`);
+
+    return fetch(input, { ...base, ...init, headers: retryHeaders, __retried: true });
+}
+
+// api 선언 "이후"에 프로퍼티를 붙이세요
 api.setAccessToken = setAccessToken;
 api.clearAccessToken = clearAccessToken;
+api.peekAccessToken = () => accessToken;
+api.decodeJwtPayload = decodeJwtPayload;      // ← Settings.jsx에서 사용
+api.refreshNow = () => refreshTokenOnce();    // ← Settings.jsx에서 사용
 
+if (typeof window !== "undefined") window.api = api; // 디버깅 편의
 export { api };
