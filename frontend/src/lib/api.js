@@ -2,25 +2,17 @@
 let accessToken = null;
 let refreshingPromise = null;
 
-/** 새로고침/HMR 후에도 토큰 유지 */
+/** 세션 복구 허용 플래그(로그인 성공 이후에만 refresh 허용) */
 const ACCESS_KEY = "ACCESS_TOKEN";
+const ALLOW_REFRESH = "ALLOW_REFRESH";
+
+/** HMR/새로고침 후에도 access, allowRefresh 유지 */
 try {
     const t = sessionStorage.getItem(ACCESS_KEY);
     if (t) accessToken = t;
 } catch {}
 
-/** 토큰 저장/삭제 시 세션에도 반영 */
-function setAccessToken(token) {
-    accessToken = token || null;
-    try {
-        if (token) sessionStorage.setItem(ACCESS_KEY, token);
-        else sessionStorage.removeItem(ACCESS_KEY);
-    } catch {}
-}
-function clearAccessToken() {
-    setAccessToken(null);
-}
-
+/** ===== 유틸 ===== */
 function isAuthPath(path) {
     return typeof path === "string" && (
         path.startsWith("/api/auth/login") ||
@@ -29,13 +21,13 @@ function isAuthPath(path) {
     );
 }
 
-/** 절대 URL 문자열도 pathname으로 변환해서 isAuthPath가 정확히 동작 */
+/** 절대/상대 입력을 pathname으로 통일 */
 function pathFromInput(input) {
     if (typeof input === "string") {
         if (input.startsWith("http://") || input.startsWith("https://")) {
             try { return new URL(input).pathname; } catch { return input; }
         }
-        return input; // 상대 경로
+        return input;
     }
     if (input && typeof input.url === "string") {
         try { return new URL(input.url, window.location.origin).pathname; }
@@ -44,7 +36,7 @@ function pathFromInput(input) {
     return "";
 }
 
-// JWT payload 디코더 (Settings에서 사용)
+/** JWT payload 디코더 (옵션) */
 function decodeJwtPayload(token) {
     try {
         const base64Url = token.split(".")[1];
@@ -56,85 +48,123 @@ function decodeJwtPayload(token) {
     } catch { return null; }
 }
 
-/** refresh를 동시에 1번만, 그리고 로그로 흐름 확인 */
+/** ===== 토큰 세터/클리어 ===== */
+function setAccessToken(token) {
+    accessToken = token || null;
+    try {
+        if (token) {
+            sessionStorage.setItem(ACCESS_KEY, token);
+            sessionStorage.setItem(ALLOW_REFRESH, "1"); // 로그인 성공 후부터 refresh 허용
+        } else {
+            sessionStorage.removeItem(ACCESS_KEY);
+        }
+    } catch {}
+}
+
+function clearAccessToken() {
+    setAccessToken(null);
+    try { sessionStorage.removeItem(ALLOW_REFRESH); } catch {}
+}
+
+/** ===== refresh 1회 동시성 보장 ===== */
 async function refreshTokenOnce() {
     if (refreshingPromise) return refreshingPromise;
-    console.warn("[api] 401 -> POST /api/auth/refresh 시도");
+
+    // 로그인 이전엔 호출하지 않도록 상위에서 막지만, 혹시 몰라 가드
+    if (!sessionStorage.getItem(ALLOW_REFRESH) && !accessToken) {
+        throw new Error("refresh not allowed before first login");
+    }
+
     refreshingPromise = (async () => {
+        // console.debug("[api] POST /api/auth/refresh");
         const r = await fetch("/api/auth/refresh", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
         });
+
         if (!r.ok) {
-            console.error("[api] refresh 응답 실패:", r.status);
+            // console.debug("[api] refresh 실패:", r.status);
             clearAccessToken();
             throw new Error("refresh failed");
         }
+
         const data = await r.json().catch(() => null);
         if (!data?.accessToken) {
-            console.error("[api] refresh 응답에 accessToken 없음");
             clearAccessToken();
             throw new Error("no accessToken");
         }
+
         setAccessToken(data.accessToken);
-        console.log("[api] refresh OK. new access =", data.accessToken.slice(0, 20) + "…");
+        // console.debug("[api] refresh OK");
         return data.accessToken;
     })();
+
     try { return await refreshingPromise; }
     finally { refreshingPromise = null; }
 }
 
-/** 공통 fetch: 401이면 refresh 후 1회 재시도 */
+/** ===== 공통 fetch =====
+ * - 비인증 경로 제외 & access 있으면 Authorization 부착
+ * - 401이면: 로그인 전엔 refresh 시도하지 않음(조용히 통과)
+ *            로그인 후에만 refresh→재시도 1회
+ */
 async function api(input, init = {}) {
     const headers = new Headers(init.headers || {});
     if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
     const reqPath = pathFromInput(input);
 
-    // 인증 경로가 아니고 메모리 토큰이 있으면 Authorization 부착
     if (!isAuthPath(reqPath) && accessToken && !headers.has("Authorization")) {
         headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    const base = { credentials: "include" }; // refresh HttpOnly 쿠키 사용
-
+    const base = { credentials: "include" }; // HttpOnly refresh 쿠키 사용
     const first = await fetch(input, { ...base, ...init, headers });
-    if (first.status !== 401 || isAuthPath(reqPath) || init.__retried) {
-        if (first.status === 401) {
-            console.warn("[api]", reqPath, "401(재시도 안 함): auth-path거나 이미 재시도됨");
-        }
+
+    // 재시도 조건 판정
+    const alreadyRetried = !!init.__retried;
+    const isAuth = isAuthPath(reqPath);
+    const allowRefresh = !!accessToken || sessionStorage.getItem(ALLOW_REFRESH) === "1";
+
+    if (first.status !== 401 || isAuth || alreadyRetried || !allowRefresh) {
+        // 로그인 전 401은 정상이므로 조용히 반환
         return first;
     }
 
-    // 401 → refresh 시도
+    // 여기부터는 로그인 후 401 → refresh 시도
     try {
         await refreshTokenOnce();
     } catch {
         return first; // refresh 실패 → 그대로 401 반환
     }
 
-    // 원요청 재시도
+    // 원요청 1회 재시도
     const retryHeaders = new Headers(init.headers || {});
     if (init.body && !retryHeaders.has("Content-Type")) retryHeaders.set("Content-Type", "application/json");
     if (accessToken) retryHeaders.set("Authorization", `Bearer ${accessToken}`);
 
-    console.log("[api] 재시도:", reqPath);
     return fetch(input, { ...base, ...init, headers: retryHeaders, __retried: true });
 }
 
-// 외부 노출
+/** ===== 외부 노출 ===== */
 api.setAccessToken = setAccessToken;
 api.clearAccessToken = clearAccessToken;
 api.peekAccessToken = () => accessToken;
 api.decodeJwtPayload = decodeJwtPayload;
 api.refreshNow = () => refreshTokenOnce();
 
-// 토큰 변경 구독 훅이 필요하면 아래 주석 해제
-// const tokenListeners = new Set();
-// function emitTokenChange(){ for (const f of tokenListeners) try{ f(accessToken); } catch{} }
-// api.onTokenChange = (cb)=>{ tokenListeners.add(cb); return ()=>tokenListeners.delete(cb); };
-// setAccessToken = (t)=>{ accessToken=t||null; /* sessionStorage... */ emitTokenChange(); };
-// clearAccessToken = ()=>{ setAccessToken(null); };
+/** 원하는 경우: 앱 첫 로드시 '한 번만' 세션 복구 시도 (조용히) */
+let triedBootRestore = false;
+api.trySessionRestoreOnce = async () => {
+    if (triedBootRestore) return;
+    triedBootRestore = true;
+    try {
+        await refreshTokenOnce(); // 쿠키 있으면 access 갱신
+    } catch {
+        /* 쿠키 없으면 무시 */
+    }
+};
 
 if (typeof window !== "undefined") window.api = api;
 export { api };

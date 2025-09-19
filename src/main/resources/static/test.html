@@ -31,7 +31,7 @@
 
     // /api/test (Authorization 필요)
     document.getElementById('who').onclick = async () => {
-        const r = await fetch('/api/test', { // 최종 경로는 /api/test
+        const r = await fetch('/api/test', {
             headers: accessToken ? { Authorization: 'Bearer ' + accessToken } : {}
         });
         const txt = await r.text();

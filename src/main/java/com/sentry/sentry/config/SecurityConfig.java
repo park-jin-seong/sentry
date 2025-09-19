@@ -30,7 +30,10 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
+    // 세션 기반 인증 대신 JWT 기반 인증을 쓰기 위한 SecurityConfig
+
     // DaoAuthenticationProvider 등록
+    // → UsernamePasswordAuthenticationToken 인증 시 UserDetailsService + PasswordEncoder 사용
     @Bean
     public DaoAuthenticationProvider daoAuthProvider(UserDetailsService uds, PasswordEncoder pe) {
         DaoAuthenticationProvider p = new DaoAuthenticationProvider();
@@ -82,7 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
                            // 개발용 테스트 페이지 및 모든 html 허용
                            .requestMatchers("/test", "/test.html").permitAll()
-//                          .requestMatchers(HttpMethod.GET, "/**/*.html").permitAll()
+//                           .requestMatchers(HttpMethod.GET, "/**/*.html").permitAll()
                         // 인증 없이 접근 가능한 인증 관련 API
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         // 그 외 모든 요청은 인증 필요
@@ -104,11 +107,14 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // 비밀번호 인코더
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // AuthenticationManager Bean 등록
+    // → 인증 처리 시 AuthenticationProvider 사용
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();
