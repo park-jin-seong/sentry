@@ -5,6 +5,7 @@ import { api } from "./lib/api.js";
 const AuthCtx = createContext({
     me: null,
     loading: true,
+    isAuthenticated: false,
     reload: async () => {},
     logout: async () => {},
 });
@@ -14,8 +15,12 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     async function loadMe() {
+        setLoading(true);                 // 매 호출마다 로딩 시작
         try {
-            const r = await api("/api/me");
+            const r = await api("/api/me", {
+                // 쿠키 기반 리프레시/세션을 쓴다면 필요
+                // credentials: "include",
+            });
             if (!r.ok) {
                 setMe(null);
                 return null;
@@ -23,13 +28,23 @@ export function AuthProvider({ children }) {
             const data = await r.json();
             setMe(data);
             return data;
+        } catch {
+            setMe(null);
+            return null;
         } finally {
             setLoading(false);
         }
     }
 
+    // 첫 마운트 시 1회
+    useEffect(() => { loadMe(); }, []);
+
+    // ✅ 토큰이 바뀌면 자동 재조회 (api.js에 onAccessTokenChange가 있어야 함)
     useEffect(() => {
-        loadMe();
+        const unsub = api.onAccessTokenChange?.(() => {
+            loadMe();
+        });
+        return () => unsub?.();
     }, []);
 
     const logout = async () => {
@@ -44,5 +59,6 @@ export function AuthProvider({ children }) {
         </AuthCtx.Provider>
     );
 }
+
 
 export const useAuth = () => useContext(AuthCtx);
