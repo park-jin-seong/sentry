@@ -28,12 +28,13 @@ public class MeController {
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "UNAUTHORIZED"));
         }
-        log.info("[/api/me] principal={}, roles={}",
-                user.getUsername(),
-                user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
+
+        // 닉네임 조회
+        Userinfo info = authService.getUserinfo(user.getUsername());
 
         return ResponseEntity.ok(Map.of(
                 "username", user.getUsername(),
+                "nickname", info.getNickname(),
                 "roles", user.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .toList()
