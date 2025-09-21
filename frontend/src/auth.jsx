@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
     // 첫 마운트 시 1회
     useEffect(() => { loadMe(); }, []);
 
-    // ✅ 토큰이 바뀌면 자동 재조회 (api.js에 onAccessTokenChange가 있어야 함)
+    // 토큰이 바뀌면 자동 재조회 (api.js에 onAccessTokenChange가 있어야 함)
     useEffect(() => {
         const unsub = api.onAccessTokenChange?.(() => {
             loadMe();
