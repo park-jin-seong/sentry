@@ -74,7 +74,7 @@ public class AuthService {
         Userinfo saved = userinfoRepository.save(nu);
 
         // 권한 저장/업데이트 (userauthority)
-        userAuthorityRepository.save(new UserAuthority(saved.getUsername(), newRole));
+        userAuthorityRepository.save(new UserAuthority(saved.getId(), newRole));
 
         return saved;
     }

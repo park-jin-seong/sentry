@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Userinfo u = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자 없음: " + username));
 
-        String roleName = authRepo.findByUsername(username)
+        String roleName = authRepo.findByUserId(u.getId())
                 .map(UserAuthority::getAuthority)
                 .orElse("OBSERVER"); // 권한 없으면 기본 OBSERVER
 
