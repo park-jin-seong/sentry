@@ -33,6 +33,7 @@ public class MeController {
         Userinfo info = authService.getUserinfo(user.getUsername());
 
         return ResponseEntity.ok(Map.of(
+                "id", info.getId(),
                 "username", user.getUsername(),
                 "nickname", info.getNickname(),
                 "roles", user.getAuthorities().stream()
