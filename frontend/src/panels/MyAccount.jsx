@@ -38,7 +38,7 @@ export default function MyAccount() {
     const [form, setForm] = useState({
         username: "",
         nickname: "",
-        password: "",
+        userpassword: "",
         showPw: false,
     });
 
@@ -90,7 +90,7 @@ export default function MyAccount() {
         try {
             const body = {
                 nickname: form.nickname,
-                ...(form.password ? { password: form.password } : {}),
+                ...(form.userpassword ? { userpassword: form.userpassword } : {}),
             };
             const res = await api("/api/me/profile", {
                 method: "PATCH",
@@ -103,7 +103,7 @@ export default function MyAccount() {
                 return;
             }
             alert("변경되었습니다.");
-            setForm((s) => ({ ...s, password: "" }));
+            setForm((s) => ({ ...s, userpassword: "" }));
         } finally {
             setSaving(false);
         }
@@ -149,7 +149,6 @@ export default function MyAccount() {
     // === 여기부터는 패널 내용만 ===
     return (
         <section className="st-panel">
-            <h1 className="st-h1">내 계정</h1>
 
             {/* 프로필 카드 */}
             <div className="st-card" style={{ marginBottom: 16 }}>
@@ -170,11 +169,11 @@ export default function MyAccount() {
                     <div className="st-pwbox">
                         <input
                             className="st-input pw"
-                            type={form.showPw ? "text" : "password"}
-                            value={form.password}
-                            onChange={onChange("password")}
+                            type={form.showPw ? "text" : "userpassword"}
+                            value={form.userpassword}
+                            onChange={onChange("userpassword")}
                             placeholder="새 비밀번호(선택)"
-                            autoComplete="new-password"
+                            autoComplete="new-userpassword"
                         />
                         <button
                             type="button"
