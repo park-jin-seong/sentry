@@ -1,15 +1,18 @@
+// src/components/chat/Chat.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import axios from 'axios';
 import throttle from 'lodash/throttle';
-import {Virtuoso} from "react-virtuoso";
 import './Chat.css';
 import Message from './Message';
-
-const currentUserId = 1;
+import { api } from "./lib/api.js";
+import { useAuth } from './auth.jsx';
 
 const Chat = () => {
+    const { user } = useAuth();
+    const currentUserId = user && user.id ? user.id : null;
+
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
     const stompClientRef = useRef(null);
@@ -34,8 +37,17 @@ const Chat = () => {
         }
 
         try {
+            const token = api.peekAccessToken();
+            if (!token) {
+                console.error("토큰이 없어 메시지를 불러올 수 없습니다.");
+                return;
+            }
+
             const response = await axios.get('http://localhost:8080/room/1', {
-                params: { lastMessageId: lastMessageId }
+                params: { lastMessageId: lastMessageId },
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             const newMessages = response.data.content;
@@ -101,7 +113,12 @@ const Chat = () => {
         const stompClient = Stomp.over(sock);
         stompClient.debug = null;
 
-        stompClient.connect({}, (frame) => {
+        const token = api.peekAccessToken();
+        console.log(token);
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        console.log(headers)
+
+        stompClient.connect(headers, (frame) => {
             console.log('Connected: ' + frame);
             stompClientRef.current = stompClient;
 
@@ -133,7 +150,7 @@ const Chat = () => {
         const senderId = currentUserId;
         const senderNickname = '(임시 닉네임)';
         const optimisticId = Date.now();
-
+        console.log(senderId);
         if (messageInput.trim() && stompClientRef.current) {
             const messageDTO = {
                 roomId: roomId,
@@ -155,8 +172,6 @@ const Chat = () => {
             setMessageInput('');
         }
     };
-
-
 
     return (
         <div className="chat-container">

@@ -68,6 +68,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
                         .requestMatchers("/test", "/test.html").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
+                        // 그 외 모든 요청은 인증 필요
+                        .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
                         .requestMatchers("/chat/**", "/room/**").permitAll() // 테스트용
                         .requestMatchers("/api/accounts/create").hasAnyRole("MASTER","OWNER")
                         .anyRequest().authenticated()
