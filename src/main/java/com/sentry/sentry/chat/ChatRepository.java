@@ -17,4 +17,10 @@ public interface ChatRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT m FROM Message m WHERE m.room.roomId = :roomId AND m.messageId < :lastMessageId ORDER BY m.messageId DESC")
     Slice<Message> findByRoomIdAndMessageIdLessThanOrderByMessageIdDesc(@Param("roomId") Long roomId, @Param("lastMessageId") Long lastMessageId, Pageable pageable);
+
+    // 추가
+    @Query("select new com.sentry.sentry.chat.MessageDTO(" +
+            "m.messageId, m.room.roomId, m.sender.id, m.sender.nickname, m.content, m.createdAt) " +
+            "from Message m where m.messageId = :id")
+    MessageDTO findDtoById(@Param("id") Long id);
 }

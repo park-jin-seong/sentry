@@ -43,11 +43,16 @@ public class ChatService {
         return messages.map(this::convertMessageDTO);
     }
 
-    public MessageDTO convertMessageDTO(Message message) {
-        MessageDTO messageDTO = new MessageDTO(message.getMessageId(),
-                message.getRoom().getRoomId(), message.getSender().getId(), message.getSender().getNickname(),
-                message.getContent(), message.getCreatedAt());
+//    public MessageDTO convertMessageDTO(Message message) {
+//        MessageDTO messageDTO = new MessageDTO(message.getMessageId(),
+//                message.getRoom().getRoomId(), message.getSender().getId(), message.getSender().getNickname(),
+//                message.getContent(), message.getCreatedAt());
+//
+//        return messageDTO;
+//    }
 
-        return messageDTO;
+    // 새로 작성 -> chatRepository 에 추가
+    public MessageDTO convertMessageDTO(Message message) {
+        return chatRepository.findDtoById(message.getMessageId());
     }
 }

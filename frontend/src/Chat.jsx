@@ -145,16 +145,20 @@ const Chat = () => {
     }, []);
 
     const sendMessage = () => {
-        const publishUrl = '/send/1';
+        // 수정 -> @MessageMapping("/chat/{roomId}")
+        const publishUrl = '/send/chat/1';
+
         const roomId = 1;
         const senderId = currentUserId;
         const senderNickname = '(임시 닉네임)';
         const optimisticId = Date.now();
         console.log(senderId);
         if (messageInput.trim() && stompClientRef.current) {
+
+            // 수정 -> 서버에서 Principal 로 senderId를 보내서 안 적어도됨
             const messageDTO = {
-                roomId: roomId,
-                senderId: senderId,
+                // roomId: roomId,
+                // senderId: senderId,
                 content: messageInput,
                 optimisticId: optimisticId,
             };
