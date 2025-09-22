@@ -1,6 +1,8 @@
+// Login.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "./lib/api.js";
+import { useAuth } from "./auth.jsx";           // ✅ 추가
 import "./Login.css";
 import sentryLogo from "./assets/sentryLogo.jpg";
 import loginImg from "./assets/loginImg.jpg";
@@ -13,20 +15,19 @@ export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const next = location.state?.from?.pathname || "/home";
+    const { reload, me } = useAuth();             // ✅ 추가
 
-    // 마운트/언마운트 로깅
     useEffect(() => {
         console.log("[Login] mount. next =", next);
         return () => console.log("[Login] unmount");
     }, [next]);
 
-    // 입력 변화 로깅(민감정보는 길이만)
-    const onChangeUsername = (e) => {
-        setUsername(e.target.value);
-    };
-    const onChangePassword = (e) => {
-        setUserPassword(e.target.value);
-    };
+    // 이미 로그인 상태면 /home으로 우회 (UX 향상)
+    useEffect(() => {
+        if (me) {
+            navigate("/home", { replace: true });
+        }
+    }, [me, navigate]);
 
     const onSubmit = async (e) => {
         e.preventDefault();
@@ -40,12 +41,15 @@ export default function Login() {
         try {
             const res = await api("/api/auth/login", {
                 method: "POST",
+                // 👉 api()가 기본으로 Content-Type을 세팅하지 않는다면 아래 주석 해제
+                // headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, userpassword }),
+                // 👉 쿠키 기반 세션/리프레시 쿠키를 쓰면 이 옵션도 필요
+                // credentials: "include",
             });
 
             console.log("응답 status =", res.status, "ok =", res.ok);
 
-            // 응답 파싱
             let data = null;
             try {
                 data = await res.clone().json();
@@ -64,12 +68,15 @@ export default function Login() {
                 throw new Error("토큰이 응답에 없습니다.");
             }
 
-            // 토큰 세팅(메모리)
+            // 1) 토큰 저장
             api.setAccessToken(data.accessToken);
             console.log("accessToken length =", data.accessToken.length);
             console.log("peekAccessToken 존재? =", !!api.peekAccessToken?.());
 
-            // 이동
+            // 2) 토큰 기준으로 /api/me 재조회 완료까지 대기  ✅ 핵심!
+            await reload();
+
+            // 3) 그 다음 보호 라우트로 이동
             console.log("navigate →", next);
             navigate(next, { replace: true });
         } catch (e2) {
@@ -93,30 +100,26 @@ export default function Login() {
                             id="username"
                             className="login-input"
                             value={username}
-                            onChange={onChangeUsername}
+                            onChange={(e) => setUsername(e.target.value)}
                             placeholder="아이디를 입력하세요"
                             autoComplete="username"
                         />
-
                         <label htmlFor="userpassword" className="login-label">비밀번호</label>
                         <input
                             id="userpassword"
                             type="password"
                             className="login-input"
                             value={userpassword}
-                            onChange={onChangePassword}
+                            onChange={(e) => setUserPassword(e.target.value)}
                             placeholder="비밀번호를 입력하세요"
                             autoComplete="current-password"
                         />
-
                         {err && <p className="login-error">{err}</p>}
-
                         <button type="submit" className="login-btn" disabled={loading}>
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
                     </form>
                 </div>
-
                 <div className="login-right">
                     <img src={loginImg} alt="" className="login-illustration" />
                 </div>

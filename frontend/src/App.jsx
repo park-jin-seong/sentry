@@ -2,7 +2,7 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth.jsx"; // 확장자 맞추기!
 import Home from "./Home.jsx";
-import Settings from "./Settings.jsx";
+import SettingsPage from "./SettingsPage.jsx";
 import Login from "./Login.jsx";
 import Chat from './Chat.jsx';
 
@@ -20,7 +20,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route element={<RequireAuth />}>
                     <Route path="/home" element={<Home />} />
-                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                 </Route>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />

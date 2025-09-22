@@ -2,6 +2,9 @@
 let accessToken = null;
 let refreshingPromise = null;
 
+// 토큰 변경 이벤트 리스너
+const listeners = new Set();
+
 /** 세션 복구 허용 플래그(로그인 성공 이후에만 refresh 허용) */
 const ACCESS_KEY = "ACCESS_TOKEN";
 const ALLOW_REFRESH = "ALLOW_REFRESH";
@@ -14,10 +17,11 @@ try {
 
 /** ===== 유틸 ===== */
 function isAuthPath(path) {
-    return typeof path === "string" && (
-        path.startsWith("/api/auth/login") ||
-        path.startsWith("/api/auth/refresh") ||
-        path.startsWith("/api/auth/logout")
+    return (
+        typeof path === "string" &&
+        (path.startsWith("/api/auth/login") ||
+            path.startsWith("/api/auth/refresh") ||
+            path.startsWith("/api/auth/logout"))
     );
 }
 
@@ -25,13 +29,20 @@ function isAuthPath(path) {
 function pathFromInput(input) {
     if (typeof input === "string") {
         if (input.startsWith("http://") || input.startsWith("https://")) {
-            try { return new URL(input).pathname; } catch { return input; }
+            try {
+                return new URL(input).pathname;
+            } catch {
+                return input;
+            }
         }
         return input;
     }
     if (input && typeof input.url === "string") {
-        try { return new URL(input.url, window.location.origin).pathname; }
-        catch { return input.url; }
+        try {
+            return new URL(input.url, window.location.origin).pathname;
+        } catch {
+            return input.url;
+        }
     }
     return "";
 }
@@ -42,13 +53,26 @@ function decodeJwtPayload(token) {
         const base64Url = token.split(".")[1];
         const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
         const json = decodeURIComponent(
-            atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
+            atob(base64)
+                .split("")
+                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+                .join("")
         );
         return JSON.parse(json);
-    } catch { return null; }
+    } catch {
+        return null;
+    }
 }
 
 /** ===== 토큰 세터/클리어 ===== */
+function notifyTokenChange() {
+    listeners.forEach((fn) => {
+        try {
+            fn(accessToken);
+        } catch {}
+    });
+}
+
 function setAccessToken(token) {
     accessToken = token || null;
     try {
@@ -59,11 +83,14 @@ function setAccessToken(token) {
             sessionStorage.removeItem(ACCESS_KEY);
         }
     } catch {}
+    notifyTokenChange(); // ✅ 변경 알림
 }
 
 function clearAccessToken() {
-    setAccessToken(null);
-    try { sessionStorage.removeItem(ALLOW_REFRESH); } catch {}
+    setAccessToken(null); // 내부에서 notify 호출됨
+    try {
+        sessionStorage.removeItem(ALLOW_REFRESH);
+    } catch {}
 }
 
 /** ===== refresh 1회 동시성 보장 ===== */
@@ -100,8 +127,28 @@ async function refreshTokenOnce() {
         return data.accessToken;
     })();
 
-    try { return await refreshingPromise; }
-    finally { refreshingPromise = null; }
+    try {
+        return await refreshingPromise;
+    } finally {
+        refreshingPromise = null;
+    }
+}
+
+/** Content-Type 자동 세팅 (FormData면 설정하지 않음) */
+function ensureContentType(headers, body) {
+    if (headers.has("Content-Type")) return;
+    if (body instanceof FormData) return; // 브라우저가 boundary 포함해 자동 설정
+    headers.set("Content-Type", "application/json");
+}
+
+/** 요청용 헤더 구성 (Authorization/Content-Type 포함) */
+function buildHeaders(init, useAuth = true) {
+    const headers = new Headers(init.headers || {});
+    ensureContentType(headers, init.body);
+    if (useAuth && accessToken && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+    return headers;
 }
 
 /** ===== 공통 fetch =====
@@ -110,22 +157,18 @@ async function refreshTokenOnce() {
  *            로그인 후에만 refresh→재시도 1회
  */
 async function api(input, init = {}) {
-    const headers = new Headers(init.headers || {});
-    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-
     const reqPath = pathFromInput(input);
-
-    if (!isAuthPath(reqPath) && accessToken && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${accessToken}`);
-    }
-
-    const base = { credentials: "include" }; // HttpOnly refresh 쿠키 사용
-    const first = await fetch(input, { ...base, ...init, headers });
-
-    // 재시도 조건 판정
-    const alreadyRetried = !!init.__retried;
     const isAuth = isAuthPath(reqPath);
-    const allowRefresh = !!accessToken || sessionStorage.getItem(ALLOW_REFRESH) === "1";
+
+    // 1차 요청
+    const firstHeaders = buildHeaders(init, !isAuth);
+    const base = { credentials: "include" }; // HttpOnly refresh 쿠키 사용
+    const first = await fetch(input, { ...base, ...init, headers: firstHeaders });
+
+    // 재시도 필요 없음
+    const alreadyRetried = !!init.__retried;
+    const allowRefresh =
+        !!accessToken || sessionStorage.getItem(ALLOW_REFRESH) === "1";
 
     if (first.status !== 401 || isAuth || alreadyRetried || !allowRefresh) {
         // 로그인 전 401은 정상이므로 조용히 반환
@@ -139,12 +182,14 @@ async function api(input, init = {}) {
         return first; // refresh 실패 → 그대로 401 반환
     }
 
-    // 원요청 1회 재시도
-    const retryHeaders = new Headers(init.headers || {});
-    if (init.body && !retryHeaders.has("Content-Type")) retryHeaders.set("Content-Type", "application/json");
-    if (accessToken) retryHeaders.set("Authorization", `Bearer ${accessToken}`);
-
-    return fetch(input, { ...base, ...init, headers: retryHeaders, __retried: true });
+    // 원요청 1회 재시도 (최신 토큰으로 헤더 재구성)
+    const retryHeaders = buildHeaders(init, true);
+    return fetch(input, {
+        ...base,
+        ...init,
+        headers: retryHeaders,
+        __retried: true,
+    });
 }
 
 /** ===== 외부 노출 ===== */
@@ -153,6 +198,10 @@ api.clearAccessToken = clearAccessToken;
 api.peekAccessToken = () => accessToken;
 api.decodeJwtPayload = decodeJwtPayload;
 api.refreshNow = () => refreshTokenOnce();
+api.onAccessTokenChange = (cb) => {
+    listeners.add(cb);
+    return () => listeners.delete(cb);
+};
 
 /** 원하는 경우: 앱 첫 로드시 '한 번만' 세션 복구 시도 (조용히) */
 let triedBootRestore = false;
