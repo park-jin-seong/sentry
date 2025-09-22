@@ -7,8 +7,6 @@ import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.Cookie;
@@ -16,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -33,30 +30,37 @@ public class AuthController {
     @PostMapping(value = "/login", produces = "application/json")
     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
         final String username = req.get("username");
-        final String userpassword = req.get("userpassword");
+        // ✅ 프론트/백 어느 쪽 키든 허용
+        final String userpassword = req.getOrDefault("userpassword", req.get("userpassword"));
+
         log.info("[LOGIN] 요청 username='{}', pwd_len={}", username, userpassword == null ? null : userpassword.length());
 
-        System.out.println("username:"+username);
-
         try {
+            // ✅ 입력 검증
+            if (username == null || username.isBlank() || userpassword == null || userpassword.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "username/userpassword required"));
+            }
+
+            // ✅ 스프링 시큐리티 인증
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, userpassword)
             );
             log.info("[LOGIN] 인증 성공: name='{}', authorities={}", auth.getName(), auth.getAuthorities());
 
-            // roles를 claims로 넣으면 매 요청 DB조회 없이 권한 복원 가능
-            List<String> roles = List.of("ROLE_MASTER");
+            // ✅ 실제 권한 목록에서 roles 구성 (하드코딩 제거)
+            List<String> roles = auth.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority) // e.g. ROLE_MASTER
+                    .toList();
+
             String access  = jwt.generateAccessToken(auth.getName(), Map.of("roles", roles));
             String refresh = jwt.generateRefreshToken(auth.getName(), Map.of("roles", roles));
 
-            // 리프레시 → HttpOnly 쿠키
+            // HttpOnly 리프레시 쿠키
             ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refresh)
-                    .httpOnly(true).secure(false)     // HTTPS에선 true
+                    .httpOnly(true).secure(false) // HTTPS면 true
                     .sameSite("Lax").path("/")
                     .maxAge(Duration.ofDays(14))
                     .build();
-
-            log.info("[LOGIN] access_len={}, refresh_len={}", access.length(), refresh.length());
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
@@ -64,10 +68,10 @@ public class AuthController {
 
         } catch (BadCredentialsException e) {
             log.warn("[LOGIN-ERR] BadCredentials: {}", e.getMessage());
-            return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","BAD_CREDENTIALS"));
         } catch (Exception e) {
             log.error("[LOGIN-ERR] 서버 오류", e);
-            return ResponseEntity.internalServerError().body(Map.of("error","SERVER_ERROR"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","SERVER_ERROR"));
         }
     }
 
@@ -77,28 +81,25 @@ public class AuthController {
         log.info("[REFRESH] 쿠키 refresh 존재? {}", refresh != null);
 
         if (refresh == null || !jwt.validate(refresh) || !jwt.isRefreshToken(refresh)) {
-            log.warn("[REFRESH] 리프레시 없음/유효하지 않음");
-            return ResponseEntity.status(401).body(Map.of("error","NO_OR_INVALID_REFRESH"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","NO_OR_INVALID_REFRESH"));
         }
 
         String username = jwt.getUsername(refresh);
-        log.info("[REFRESH] username={}", username);
+        // 토큰에 roles 클레임을 넣었으니 그대로 사용(없으면 기본 ROLE_OBSERVER 등)
+        List<String> roles = jwt.getRoles(refresh); // 없으면 jwt에 helper 추가하거나 기본값 사용
+        if (roles == null || roles.isEmpty()) roles = List.of("ROLE_OBSERVER");
 
-        // (선택) 토큰 회전/블랙리스트 체크 로직 위치
-        List<String> roles = List.of("ROLE_USER");
         String newAccess = jwt.generateAccessToken(username, Map.of("roles", roles));
-
-        log.info("[REFRESH] newAccess_len={}", newAccess.length());
         return ResponseEntity.ok(Map.of("accessToken", newAccess));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
-        // REFRESH 쿠키 삭제
         ResponseCookie del = ResponseCookie.from("REFRESH_TOKEN", "")
                 .httpOnly(true).secure(false).sameSite("Lax").path("/")
                 .maxAge(0).build();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, del.toString())
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, del.toString())
                 .body(Map.of("result","ok"));
     }
 
@@ -108,9 +109,4 @@ public class AuthController {
         for (Cookie c : cookies) if (name.equals(c.getName())) return c.getValue();
         return null;
     }
-
-
-
-
-
 }
