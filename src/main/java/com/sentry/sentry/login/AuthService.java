@@ -1,5 +1,7 @@
 package com.sentry.sentry.login;
 
+import com.sentry.sentry.chat.RoomRepository;
+import com.sentry.sentry.chat.RoomUserRepository;
 import com.sentry.sentry.entity.*;
 import com.sentry.sentry.login.dto.ProfileUpdateRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,10 @@ public class AuthService {
     private final UserinfoRepository userinfoRepository;
     private final UserAuthorityRepository userAuthorityRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // 추가 주입
+    private final RoomRepository roomRepository;
+    private final RoomUserRepository roomUserRepository;
 
     public Userinfo getUserinfo(String username) {
         return userinfoRepository.findByUsername(username)
@@ -67,14 +73,27 @@ public class AuthService {
             default       -> throw new IllegalArgumentException("계정을 생성할 권한이 없습니다.");
         };
 
+        // 1) 유저 저장
         Userinfo nu = new Userinfo();
         nu.setUsername(newUsername.trim());
         nu.setUserpassword(passwordEncoder.encode(rawPw));
         nu.setNickname((nickname == null || nickname.isBlank()) ? newUsername : nickname.trim());
         Userinfo saved = userinfoRepository.save(nu);
 
-        // 권한 저장/업데이트 (userauthority)
+        // 2) 권한 저장
         userAuthorityRepository.save(new UserAuthority(saved.getId(), newRole));
+
+        // 3) 기본 방(id=1)에 room_user 자동 생성
+        Room defaultRoom = roomRepository.findById(1L)
+                .orElseThrow(() -> new IllegalStateException("기본 방(id=1)이 없습니다."));
+
+        if (!roomUserRepository.existsByUser_IdAndRoom_RoomId(saved.getId(), 1L)) {
+            RoomUser ru = new RoomUser();
+            ru.setUser(saved);
+            ru.setRoom(defaultRoom);
+            ru.setLastReadMessage(null); // 아직 읽은 메시지 없음
+            roomUserRepository.save(ru);
+        }
 
         return saved;
     }
