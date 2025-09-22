@@ -3,6 +3,7 @@ package com.sentry.sentry.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import java.util.List;
 
@@ -30,4 +31,15 @@ public class Userinfo {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<RoomUser> roomUsers;
+
+
+//    // 권한 설정을 위한 ..
+//    public enum Role {
+//        MASTER, OWNER, OBSERVER
+//    }
+//
+//    // 빠진 필드 추가 (DB 컬럼 필요)
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "role", length = 20, nullable = false)
+//    private Role role;
 }

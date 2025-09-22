@@ -1,8 +1,9 @@
-// src/main/java/com/sentry/sentry/security/CustomUserDetailsService.java
 package com.sentry.sentry.security;
 
 import com.sentry.sentry.entity.Userinfo;
 import com.sentry.sentry.entity.UserinfoRepository;
+import com.sentry.sentry.entity.UserAuthorityRepository;
+import com.sentry.sentry.entity.UserAuthority;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
@@ -14,21 +15,26 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserinfoRepository repo;
+    private final UserinfoRepository userRepo;
+    private final UserAuthorityRepository authRepo;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Userinfo u = repo.findByUsername(username)
+        Userinfo u = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자 없음: " + username));
 
-        // 권한 필드가 없다면 기본값 ROLE_USER 부여
-        List<SimpleGrantedAuthority> auths = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        String roleName = authRepo.findByUsername(username)
+                .map(UserAuthority::getAuthority)
+                .orElse("OBSERVER"); // 권한 없으면 기본 OBSERVER
 
-        return User.withUsername(u.getUsername())
-                .password(u.getUserpassword())   // 반드시 BCrypt 해시여야 함!
-                .authorities(auths)
-                .accountExpired(false).accountLocked(false)
-                .credentialsExpired(false).disabled(false)
-                .build();
+        List<SimpleGrantedAuthority> auths =
+                List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+
+        return CustomUserDetails.of(
+                u.getId(),
+                u.getUsername(),
+                u.getUserpassword(),   // BCrypt 해시
+                auths
+        );
     }
 }

@@ -1,4 +1,3 @@
-// src/main/java/com/sentry/sentry/login/MeController.java
 package com.sentry.sentry.login;
 
 import com.sentry.sentry.entity.Userinfo;
@@ -29,10 +28,10 @@ public class MeController {
             return ResponseEntity.status(401).body(Map.of("error", "UNAUTHORIZED"));
         }
 
-        // 닉네임 조회
         Userinfo info = authService.getUserinfo(user.getUsername());
 
         return ResponseEntity.ok(Map.of(
+                "id", info.getId(),
                 "username", user.getUsername(),
                 "nickname", info.getNickname(),
                 "roles", user.getAuthorities().stream()
@@ -40,6 +39,7 @@ public class MeController {
                         .toList()
         ));
     }
+
     @PatchMapping("/me/profile")
     public ResponseEntity<?> updateProfile(
             @AuthenticationPrincipal UserDetails user,
@@ -52,8 +52,7 @@ public class MeController {
             var roles = user.getAuthorities().stream()
                     .map(a -> a.getAuthority()).collect(Collectors.toList());
 
-            // 비번 변경 여부에 따라 재로그인 유도 플래그(선택)
-            boolean reLogin = req.getPassword() != null && !req.getPassword().isBlank();
+            boolean reLogin = req.getUserpassword() != null && !req.getUserpassword().isBlank();
 
             return ResponseEntity.ok(new Object() {
                 public final MeResponse me = new MeResponse(
@@ -65,9 +64,6 @@ public class MeController {
             return ResponseEntity.badRequest().body(new Object(){ public final String error = e.getMessage(); });
         }
     }
-
-
-
 
     @GetMapping("/test")
     public String test(@AuthenticationPrincipal(expression="username") String username) {

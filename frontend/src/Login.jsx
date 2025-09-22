@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "./lib/api.js";
-import { useAuth } from "./auth.jsx";           // ✅ 추가
+import { useAuth } from "./auth.jsx";           // 추가
 import "./Login.css";
 import sentryLogo from "./assets/sentryLogo.jpg";
 import loginImg from "./assets/loginImg.jpg";
@@ -15,7 +15,7 @@ export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const next = location.state?.from?.pathname || "/home";
-    const { reload, me } = useAuth();             // ✅ 추가
+    const { reload, me } = useAuth();             // 추가
 
     useEffect(() => {
         console.log("[Login] mount. next =", next);
@@ -41,11 +41,11 @@ export default function Login() {
         try {
             const res = await api("/api/auth/login", {
                 method: "POST",
-                // 👉 api()가 기본으로 Content-Type을 세팅하지 않는다면 아래 주석 해제
-                // headers: { "Content-Type": "application/json" },
+                //  api()가 기본으로 Content-Type을 세팅하지 않는다면 아래 주석 해제
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, userpassword }),
-                // 👉 쿠키 기반 세션/리프레시 쿠키를 쓰면 이 옵션도 필요
-                // credentials: "include",
+                // 쿠키 기반 세션/리프레시 쿠키를 쓰면 이 옵션도 필요
+                credentials: "include",
             });
 
             console.log("응답 status =", res.status, "ok =", res.ok);
@@ -73,7 +73,7 @@ export default function Login() {
             console.log("accessToken length =", data.accessToken.length);
             console.log("peekAccessToken 존재? =", !!api.peekAccessToken?.());
 
-            // 2) 토큰 기준으로 /api/me 재조회 완료까지 대기  ✅ 핵심!
+            // 2) 토큰 기준으로 /api/me 재조회 완료까지 대기
             await reload();
 
             // 3) 그 다음 보호 라우트로 이동
@@ -114,7 +114,7 @@ export default function Login() {
                             placeholder="비밀번호를 입력하세요"
                             autoComplete="current-password"
                         />
-                        {err && <p className="login-error">{err}</p>}
+                        {err && <p className="login-error">{"아이디와 비밀번호를 다시 입력해주세요"}</p>}
                         <button type="submit" className="login-btn" disabled={loading}>
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
