@@ -23,4 +23,8 @@ public interface ChatRepository extends JpaRepository<Message, Long> {
             "m.messageId, m.room.roomId, m.sender.id, m.sender.nickname, m.content, m.createdAt) " +
             "from Message m where m.messageId = :id")
     MessageDTO findDtoById(@Param("id") Long id);
+
+    // 유저 계정 삭제
+    boolean existsBySender_Id(Long userId);
+    void deleteBySender_Id(Long userId);
 }

@@ -3,8 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api.js";
 import "../Settings.css";
 
+/**
+ * 서버 규약
+ * - 비밀번호 필드명은 userpassword (백엔드 DTO/엔티티에 맞춤)
+ * - 목록 조회는 role 쿼리 파라미터로 대상 역할을 지정:
+ *    - MASTER  →  role=OWNER
+ *    - OWNER   →  role=OBSERVER
+ */
 const ENDPOINTS = {
-    list: "/api/accounts", // GET: [{ username, nickname?, role? }, ...]
+    // role: "OWNER" | "OBSERVER"
+    list: (role) => `/api/accounts${role ? `?role=${encodeURIComponent(role)}` : ""}`, // GET: [{ username, nickname?, role? }, ...]
     create: "/api/accounts/create", // POST body: { username, userpassword, nickname? }
     resetPw: (username) => `/api/accounts/${encodeURIComponent(username)}/userpassword`, // PATCH body: { userpassword }
     remove: (username) => `/api/accounts/${encodeURIComponent(username)}`, // DELETE
@@ -23,13 +31,21 @@ export default function AccountManage() {
     // 목록
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errorMsg, setErrorMsg] = useState("");
 
-    // 생성 가능 역할 안내 (서버가 최종 강제하지만 UI 안내용)
+    // 내 역할 & 생성 가능 역할 안내
     const [myRole, setMyRole] = useState("-");
     const nextCreatableRole = useMemo(() => {
         if (myRole === "MASTER") return "OWNER";
         if (myRole === "OWNER") return "OBSERVER";
         return "-";
+    }, [myRole]);
+
+    // 내가 볼 수 있는 대상 역할(목록 필터)
+    const viewRole = useMemo(() => {
+        if (myRole === "MASTER") return "OWNER";
+        if (myRole === "OWNER") return "OBSERVER";
+        return null; // OBSERVER 등은 조회 대상 없음
     }, [myRole]);
 
     // 내 권한 + 목록 로드
@@ -45,10 +61,11 @@ export default function AccountManage() {
                             ? me.roles[0].replace(/^ROLE_/, "")
                             : me.role || "-";
                     setMyRole(role);
+                } else {
+                    setErrorMsg("내 정보 조회 실패");
                 }
 
-                // 목록
-                await fetchList();
+                await fetchListOnce();
             } finally {
                 setLoading(false);
             }
@@ -56,16 +73,55 @@ export default function AccountManage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchList = async () => {
-        const res = await api(ENDPOINTS.list);
-        if (!res.ok) {
-            console.error("계정 목록 조회 실패");
+    // 역할이 정해지면 목록 다시 로드
+    useEffect(() => {
+        if (!loading) fetchListOnce();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewRole]);
+
+    const fetchListOnce = async () => {
+        setErrorMsg("");
+        // 조회 권한 체크: MASTER→OWNER, OWNER→OBSERVER만
+        // if (!viewRole) {
+        //     setItems([]);
+        //     setErrorMsg("조회 가능한 대상 역할이 없습니다.");
+        //     return;
+        // }
+
+        try {
+            const res = await api(ENDPOINTS.list(viewRole));
+            const status = res.status;
+            const text = await res.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (e) {
+                console.error("JSON parse error", e, text);
+            }
+
+            if (!res.ok) {
+                console.error("계정 목록 조회 실패", status, data);
+                setItems([]);
+                setErrorMsg(
+                    status === 401 ? "로그인이 필요합니다."
+                        : status === 403 ? "권한이 없습니다."
+                            : "계정 목록을 불러오지 못했습니다."
+                );
+                return;
+            }
+
+            // 다양한 응답 형태 수용
+            const list =
+                Array.isArray(data) ? data
+                    : Array.isArray(data?.items) ? data.items
+                        : Array.isArray(data?.content) ? data.content
+                            : Array.isArray(data?.data) ? data.data
+                                : [];
+
+            setItems(list);
+        } catch (err) {
+            console.error("계정 목록 조회 예외", err);
             setItems([]);
-            return;
+            setErrorMsg("네트워크 오류가 발생했습니다.");
         }
-        const data = await res.json().catch(() => []);
-        // 서버가 배열을 돌려준다고 가정: [{username, nickname?, role?}]
-        setItems(Array.isArray(data) ? data : data.items || []);
     };
 
     const onChange = (k) => (e) =>
@@ -74,32 +130,38 @@ export default function AccountManage() {
     const onCreate = async (e) => {
         e.preventDefault();
         if (busy) return;
-        if (!form.username.trim() || form.userpassword.length < 8) {
+
+        const username = form.username.trim();
+        const pw = form.userpassword;
+
+        if (!username || pw.length < 8) {
             alert("아이디는 필수, 비밀번호는 8자 이상이어야 합니다.");
             return;
         }
+
         setBusy(true);
         try {
+            const body = {
+                username,
+                userpassword: pw, // ★ 서버 필드명 유지
+            };
+            const nick = form.nickname.trim();
+            if (nick) body.nickname = nick;
+
             const res = await api(ENDPOINTS.create, {
                 method: "POST",
-                body: JSON.stringify({
-                    username: form.username.trim(),
-                    userpassword: form.userpassword,
-                    ...(form.nickname.trim()
-                        ? { nickname: form.nickname.trim() }
-                        : {}),
-                }),
+                body: JSON.stringify(body),
             });
+
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 alert(data?.error || "생성 실패");
                 return;
             }
-            alert(
-                `생성 완료: ${data.username || form.username} (${data.role || nextCreatableRole})`
-            );
+
+            alert(`생성 완료: ${data.username || username} (${data.role || nextCreatableRole})`);
             setForm({ username: "", userpassword: "", nickname: "", showPw: false });
-            await fetchList();
+            await fetchListOnce();
         } finally {
             setBusy(false);
         }
@@ -114,7 +176,7 @@ export default function AccountManage() {
         }
         const res = await api(ENDPOINTS.resetPw(username), {
             method: "PATCH",
-            body: JSON.stringify({ userpassword: pw }),
+            body: JSON.stringify({ userpassword: pw }), // ★ 서버 필드명 유지
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -122,7 +184,7 @@ export default function AccountManage() {
             return;
         }
         alert("비밀번호가 변경되었습니다.");
-        await fetchList();
+        await fetchListOnce();
     };
 
     const onRemove = async (username) => {
@@ -133,21 +195,18 @@ export default function AccountManage() {
             alert(data?.error || "삭제 실패");
             return;
         }
-        await fetchList();
+        await fetchListOnce();
     };
 
     return (
         <section className="st-panel">
-
             {/* 생성 폼 */}
             <div className="st-card" style={{ marginBottom: 16, maxWidth: 560 }}>
                 <h3 className="st-h3">계정 생성</h3>
                 <p className="st-label" style={{ marginBottom: 8 }}>
                     내 역할: <b>{myRole}</b>{" "}
                     {nextCreatableRole !== "-" && (
-                        <>
-                            · 생성 가능한 역할: <b>{nextCreatableRole}</b>
-                        </>
+                        <> · 생성 가능한 역할: <b>{nextCreatableRole}</b></>
                     )}
                 </p>
 
@@ -164,18 +223,16 @@ export default function AccountManage() {
                     <div className="st-pwbox">
                         <input
                             className="st-input pw"
-                            type={form.showPw ? "text" : "userpassword"}
-                            value={form.userpassword}
+                            type={form.showPw ? "text" : "password"}  // ★ HTML 표준: password
+                            value={form.userpassword}                 // ★ 전송 키는 userpassword
                             onChange={onChange("userpassword")}
                             placeholder="초기 비밀번호 (8자 이상)"
-                            autoComplete="new-userpassword"
+                            autoComplete="new-password"
                         />
                         <button
                             type="button"
                             className="st-eye"
-                            onClick={() =>
-                                setForm((s) => ({ ...s, showPw: !s.showPw }))
-                            }
+                            onClick={() => setForm((s) => ({ ...s, showPw: !s.showPw }))}
                         >
                             {form.showPw ? "notshow" : "show"}
                         </button>
@@ -198,6 +255,14 @@ export default function AccountManage() {
             {/* 목록 테이블 */}
             <div className="st-card" style={{ maxWidth: 760 }}>
                 <h3 className="st-h3">계정 목록</h3>
+                <p className="st-label" style={{ marginBottom: 8 }}>
+                    {viewRole ? <>보는 대상: <b>{viewRole}</b></> : "조회 대상 없음"}
+                </p>
+                {errorMsg && (
+                    <div className="st-label" style={{ color: "#f66", marginBottom: 8 }}>
+                        {errorMsg}
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="st-label">불러오는 중…</div>
@@ -216,7 +281,8 @@ export default function AccountManage() {
                             <thead>
                             <tr style={{ textAlign: "left", opacity: 0.8 }}>
                                 <th style={{ padding: "8px 10px" }}>아이디</th>
-                                <th style={{ padding: "8px 10px" }}>비밀번호</th>
+                                <th style={{ padding: "8px 10px" }}>닉네임</th>
+                                <th style={{ padding: "8px 10px" }}>역할</th>
                                 <th style={{ padding: "8px 10px", width: 220 }}>액션</th>
                             </tr>
                             </thead>
@@ -224,7 +290,8 @@ export default function AccountManage() {
                             {items.map((u) => (
                                 <tr key={u.username} style={{ borderTop: "1px solid #ffffff14" }}>
                                     <td style={{ padding: "10px" }}>{u.username}</td>
-                                    <td style={{ padding: "10px" }}>••••••••</td>
+                                    <td style={{ padding: "10px" }}>{u.nickname || "-"}</td>
+                                    <td style={{ padding: "10px" }}>{(u.role || "").toString()}</td>
                                     <td style={{ padding: "10px" }}>
                                         <div style={{ display: "flex", gap: 8 }}>
                                             <button
@@ -232,7 +299,7 @@ export default function AccountManage() {
                                                 className="st-btn"
                                                 onClick={() => onResetPw(u.username)}
                                             >
-                                                수정
+                                                비밀번호 변경
                                             </button>
                                             <button
                                                 type="button"

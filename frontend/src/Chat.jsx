@@ -1,16 +1,16 @@
 // src/components/chat/Chat.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import axios from 'axios';
 import throttle from 'lodash/throttle';
 import './Chat.css';
 import Message from './Message';
-import { api } from "./lib/api.js";
-import { useAuth } from './auth.jsx';
+import {api} from "./lib/api.js";
+import {useAuth} from './auth.jsx';
 
 const Chat = () => {
-    const { user } = useAuth();
+    const {user} = useAuth();
     const currentUserId = user && user.id ? user.id : null;
 
     const [messages, setMessages] = useState([]);
@@ -44,7 +44,7 @@ const Chat = () => {
             }
 
             const response = await axios.get('http://localhost:8080/room/1', {
-                params: { lastMessageId: lastMessageId },
+                params: {lastMessageId: lastMessageId},
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -84,7 +84,7 @@ const Chat = () => {
         if (!chatDiv) return;
 
         const handleScroll = () => {
-            const { scrollTop } = chatDiv;
+            const {scrollTop} = chatDiv;
 
             if (scrollTop <= 5 && !isLoadingMessages.current && hasMore) {
                 const lastMessage = messagesRef.current[messagesRef.current.length - 1];
@@ -115,7 +115,7 @@ const Chat = () => {
 
         const token = api.peekAccessToken();
         console.log(token);
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const headers = token ? {'Authorization': `Bearer ${token}`} : {};
         console.log(headers)
 
         stompClient.connect(headers, (frame) => {
@@ -178,27 +178,29 @@ const Chat = () => {
     };
 
     return (
-        <div className="chat-container">
-            <div className="chat-messages" ref={chatContainerRef}>
-                {messages.slice().reverse().map((msg) => (
-                    <Message
-                        key={msg.messageId || msg.optimisticId}
-                        msg={msg}
-                        currentUserId={currentUserId}
+        <div id="chat-root" className="chat-shell">
+            <div className="chat-container">
+                <div className="chat-messages" ref={chatContainerRef}>
+                    {messages.slice().reverse().map((msg) => (
+                        <Message
+                            key={msg.messageId || msg.optimisticId}
+                            msg={msg}
+                            currentUserId={currentUserId}
+                        />
+                    ))}
+                </div>
+                <div className="chat-input-area">
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="메시지를 입력하세요"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
                     />
-                ))}
-            </div>
-            <div className="chat-input-area">
-                <input
-                    type="text"
-                    id="messageInput"
-                    placeholder="메시지를 입력하세요"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                />
-                <button onClick={sendMessage}>
-                    전송
-                </button>
+                    <button onClick={sendMessage}>
+                        전송
+                    </button>
+                </div>
             </div>
         </div>
     );
