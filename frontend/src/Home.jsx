@@ -56,7 +56,9 @@ const Home = () => {
 
                     </div>
                     <div className="video-grid">
-
+                        <video controls autoPlay>
+                            <source src="http://cctvsec.ktict.co.kr/149/nFkiJmSnQdzSaJDEmBGCvFgZUdPlUrWvkDbV8Jm7WkpoZsPkzMyXJ5YTQ8unOgtmSwxjyyGOSvywfyvFS7LBS+S+dV0CwUiwHoW7iZEYuW0=" type="application/x-mpegURL"/>
+                        </video>
                     </div>
                 </main>
             </div>
