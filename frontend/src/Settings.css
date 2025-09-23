@@ -15,7 +15,7 @@
     display:flex;
     height:100vh;
     width:100vw;
-    background: var(--bg);
+    background: #484E58;
     color: var(--txt);
     overflow:hidden;
 }
@@ -23,7 +23,7 @@
 /* 왼쪽 사이드바 */
 .settings-sidebar {
     width: 260px;
-    background: var(--bg-deeper);
+    background: #3D434D;
     padding: 20px 14px;
     box-shadow: inset -1px 0 0 #00000022;
     display:flex;
@@ -35,67 +35,100 @@
     font-size: 20px;
     margin-bottom: 16px;
 }
+
 .sidebar-section-title {
     font-size: 12px;
     color: var(--muted);
     margin: 8px 6px 4px;
 }
+
 .sidebar-divider {
     height: 1px;
-    background: #00000033;
+    background: #7B7B7B;
     margin: 10px 4px;
     border-radius: 1px;
 }
+
 .sidebar-item {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    color: var(--txt);
-    text-align: left;
-    padding: 10px 12px;
-    border-radius: 8px;
-    opacity: .9;
-    cursor: pointer;
+    appearance: none; border: 0; background: transparent; color: var(--txt);
+    text-align: left; padding: 10px 12px; border-radius: 8px; opacity: .9; cursor: pointer;
 }
-.sidebar-item:hover {
-    background: #ffffff12;
-    opacity: 1;
-}
-.sidebar-item.is-active {
-    background: #ffffff18;
-    font-weight: 600;
-}
+.sidebar-item:hover { background: #ffffff12; opacity: 1; }
+.sidebar-item.is-active { background: #ffffff18; font-weight: 600; }
 
 /* 오른쪽 본문 */
 .settings-main {
-    flex:1;
-    display:flex;
-    flex-direction: column;
-    overflow:hidden;
+    flex:1; display:flex; flex-direction: column; overflow:hidden;
 }
+
+/* 헤더: 오른쪽에 ESC 버튼 배치 (flex) */
 .settings-header {
     padding: 20px 28px;
     border-bottom: 1px solid #00000022;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
 }
-.settings-h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin:0;
-}
-.settings-panel {
-    flex:1;
-    padding: 24px 28px;
-    overflow:auto;
-}
+.settings-h1 { font-size: 22px; font-weight: 700; margin:0; }
 
-/* 패널 내부 (MyAccount 등) */
+/* ====== 우상단 닫기 버튼(이미지 + ESC 라벨) ====== */
+.esc-close{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    gap: 6px;
+
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+
+    outline: none;                 /* 포커스/클릭 이상한 선 제거 */
+    -webkit-tap-highlight-color: transparent;
+}
+.esc-close img{
+    width: 44px;
+    height: 44px;
+    display:block;
+    user-select: none;
+    -webkit-user-drag: none;
+
+    transition: transform .15s ease, filter .15s ease;
+    filter: brightness(0.92);
+}
+.esc-close:hover img{
+    transform: scale(1.06);
+    filter: brightness(1.05);
+}
+.esc-close:active img{
+    transform: scale(0.96);
+}
+.esc-close span{
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    user-select: none;
+}
+.esc-close:focus{ outline: none; box-shadow:none; }
+.esc-close:focus-visible{ outline:none; box-shadow:none; }
+
+/* 본문 패널 */
+.settings-panel { flex:1; padding: 24px 28px; overflow:auto; }
+
+/* 패널 내부 (공통 폼 컴포넌트) */
 .st-form { display:grid; gap:12px; max-width:420px; }
 .st-label { font-size:12px; color:var(--muted); }
 .st-input {
-    background:var(--panel); border:1px solid transparent; color:var(--txt);
-    border-radius:10px; padding:10px 12px; outline:none;
+    background: #3D434D;
+    border:1px solid transparent;
+    color:var(--txt);
+    border-radius:10px;
+    padding:10px 12px;
+    outline:none;
 }
 .st-input:focus { border-color:var(--ring); }
+
 .st-primary {
     background:var(--accent); color:#fff; border:none; padding:10px 14px;
     border-radius:8px; cursor:pointer; font-weight:600;
