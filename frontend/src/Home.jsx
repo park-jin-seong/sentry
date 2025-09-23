@@ -4,6 +4,7 @@ import Chat from './Chat'; // 1. Chat 컴포넌트 임포트
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth.jsx";
 import { api } from "./lib/api.js";
+import sentryLogo from "./assets/sentryLogo.jpg"
 
 const Home = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,8 +27,9 @@ const Home = () => {
 
             <header className="top-bar">
                 <div className="logo-container">
-                    <span className="logo">SENTRY</span>
+                    <img src={sentryLogo} alt="SENTRY" className="logo-img" />
                 </div>
+                
                 <nav className="nav-menu">
                     <a href="#" className="nav-item">검색</a>
                     <a href="#" className="nav-item active">도움말</a>

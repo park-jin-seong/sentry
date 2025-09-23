@@ -4,7 +4,7 @@
     --panel:#3a414c;
     --txt:#e8edf3;
     --muted:#9aa3ad;
-    --accent:#1c7e91;
+    --accent:#1c7e91;  /* 버튼 색: 필요 시 #207590 로 바꿔도 됨 */
     --danger:#d35b5b;
     --ring:#4a5666;
     --shadow: rgba(0,0,0,.35);
@@ -15,7 +15,7 @@
     display:flex;
     height:100vh;
     width:100vw;
-    background: #484E58;
+    background: #484E58;  /* 페이지 배경 */
     color: var(--txt);
     overflow:hidden;
 }
@@ -23,32 +23,16 @@
 /* 왼쪽 사이드바 */
 .settings-sidebar {
     width: 260px;
-    background: #3D434D;
+    background: #3D434D; /* 사이드바 배경 */
     padding: 20px 14px;
     box-shadow: inset -1px 0 0 #00000022;
     display:flex;
     flex-direction: column;
     gap: 6px;
 }
-.settings-logo {
-    font-weight: 800;
-    font-size: 20px;
-    margin-bottom: 16px;
-}
-
-.sidebar-section-title {
-    font-size: 12px;
-    color: var(--muted);
-    margin: 8px 6px 4px;
-}
-
-.sidebar-divider {
-    height: 1px;
-    background: #7B7B7B;
-    margin: 10px 4px;
-    border-radius: 1px;
-}
-
+.settings-logo { font-weight: 800; font-size: 20px; margin-bottom: 16px; }
+.sidebar-section-title { font-size: 12px; color: var(--muted); margin: 8px 6px 4px; }
+.sidebar-divider { height: 1px; background: #7B7B7B; margin: 10px 4px; border-radius: 1px; }
 .sidebar-item {
     appearance: none; border: 0; background: transparent; color: var(--txt);
     text-align: left; padding: 10px 12px; border-radius: 8px; opacity: .9; cursor: pointer;
@@ -57,11 +41,9 @@
 .sidebar-item.is-active { background: #ffffff18; font-weight: 600; }
 
 /* 오른쪽 본문 */
-.settings-main {
-    flex:1; display:flex; flex-direction: column; overflow:hidden;
-}
+.settings-main { flex:1; display:flex; flex-direction: column; overflow:hidden; }
 
-/* 헤더: 오른쪽에 ESC 버튼 배치 (flex) */
+/* 헤더: 우상단 ESC 버튼 들어가는 곳(별도 버튼은 네가 이미 추가함) */
 .settings-header {
     padding: 20px 28px;
     border-bottom: 1px solid #00000022;
@@ -71,66 +53,77 @@
 }
 .settings-h1 { font-size: 22px; font-weight: 700; margin:0; }
 
-/* ====== 우상단 닫기 버튼(이미지 + ESC 라벨) ====== */
+/* ESC 이미지 버튼(이미 구현되어 있으면 유지) */
 .esc-close{
-    display:flex;
-    flex-direction: column;
-    align-items:center;
-    gap: 6px;
-
-    background: transparent;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-
-    outline: none;                 /* 포커스/클릭 이상한 선 제거 */
-    -webkit-tap-highlight-color: transparent;
+    display:flex; flex-direction: column; align-items:center; gap: 6px;
+    background: transparent; border: 0; padding: 0; cursor: pointer;
+    outline: none; -webkit-tap-highlight-color: transparent;
 }
 .esc-close img{
-    width: 44px;
-    height: 44px;
-    display:block;
-    user-select: none;
-    -webkit-user-drag: none;
-
-    transition: transform .15s ease, filter .15s ease;
-    filter: brightness(0.92);
+    width: 44px; height: 44px; display:block; user-select: none; -webkit-user-drag: none;
+    transition: transform .15s ease, filter .15s ease; filter: brightness(0.92);
 }
-.esc-close:hover img{
-    transform: scale(1.06);
-    filter: brightness(1.05);
-}
-.esc-close:active img{
-    transform: scale(0.96);
-}
-.esc-close span{
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-    line-height: 1;
-    user-select: none;
-}
-.esc-close:focus{ outline: none; box-shadow:none; }
-.esc-close:focus-visible{ outline:none; box-shadow:none; }
+.esc-close:hover img{ transform: scale(1.06); filter: brightness(1.05); }
+.esc-close:active img{ transform: scale(0.96); }
+.esc-close span{ font-size: 12px; color: var(--muted); letter-spacing: 0.04em; line-height: 1; user-select: none; }
+.esc-close:focus, .esc-close:focus-visible{ outline:none; box-shadow:none; }
 
 /* 본문 패널 */
 .settings-panel { flex:1; padding: 24px 28px; overflow:auto; }
 
-/* 패널 내부 (공통 폼 컴포넌트) */
+/* 공통 폼 */
 .st-form { display:grid; gap:12px; max-width:420px; }
 .st-label { font-size:12px; color:var(--muted); }
 .st-input {
-    background: #3D434D;
-    border:1px solid transparent;
-    color:var(--txt);
-    border-radius:10px;
-    padding:10px 12px;
-    outline:none;
+    background: #3D434D; border:1px solid transparent; color:var(--txt);
+    border-radius:10px; padding:10px 12px; outline:none;
 }
 .st-input:focus { border-color:var(--ring); }
-
 .st-primary {
-    background:var(--accent); color:#fff; border:none; padding:10px 14px;
+    background: var(--accent); color:#fff; border:none; padding:10px 14px;
     border-radius:8px; cursor:pointer; font-weight:600;
 }
 .st-primary:hover{ filter:brightness(1.05); }
+
+/* =========================
+   비밀번호 입력창 내부 아이콘
+   ========================= */
+/* 인풋+아이콘 래퍼 */
+.st-pwbox{
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+/* 인풋을 래퍼 폭(100%)으로 늘리고, 아이콘 자리 확보 */
+.st-pwbox .st-input.pw{
+    width: 100%;
+    padding-right: 44px; /* 아이콘 공간 */
+}
+
+/* 아이콘 버튼을 인풋 '안쪽' 우측 중앙에 고정 */
+.st-pwbox .st-eye{
+    position: absolute;
+    top: 50%;
+    right: 10px;               /* 인풋 안쪽 여백과 맞춰 조절 */
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.st-pwbox .st-eye img{
+    width: 20px;
+    height: 20px;
+    display: block;
+    opacity: .9;
+    transition: opacity .12s ease, transform .12s ease;
+}
+
+.st-pwbox .st-eye:hover img{ opacity: 1; transform: scale(1.06); }
+.st-pwbox .st-eye:active img{ transform: scale(0.94); }
