@@ -1,10 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>RTSP 실시간 스트리밍</title>
+    <style>
+        .videoFrame {
+            width: 480px;
+            height: 360px;
+            border: 1px solid #333;
+        }
+    </style>
 </head>
 <body>
-    <div>메인</div>
+<h2>RTSP 실시간 스트리밍 - 단일 채널</h2>
+
+<img id="videoFrame0" class="videoFrame" alt="Channel 0" />
+
+<script>
+    // const img = document.getElementById("videoFrame0");
+    //
+    // // 단일 채널 WebSocket 연결
+    // const ws = new WebSocket("ws://localhost:8080/ws/rtsp?channel=0");
+    //
+    // ws.onopen = () => ws.send("start");
+    //
+    // ws.onmessage = (event) => {
+    //     img.src = "data:image/jpeg;base64," + event.data;
+    // };
+    //
+    // ws.onclose = () => console.log("WebSocket closed");
+    // ws.onerror = (e) => console.log("WebSocket error", e);
+</script>
 </body>
 </html>

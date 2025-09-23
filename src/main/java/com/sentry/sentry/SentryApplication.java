@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @SpringBootApplication // (exclude = SecurityAutoConfiguration.class)
+
 public class SentryApplication {
 
 	public static void main(String[] args) {

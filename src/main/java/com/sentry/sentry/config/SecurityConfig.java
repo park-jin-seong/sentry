@@ -92,7 +92,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
                         .requestMatchers("/chat/**").permitAll()
 //                        .requestMatchers("/room/**").permitAll()
-                        .requestMatchers("/cam/**").permitAll() // 테스트용(나중에 변겯하기)
+                        .requestMatchers("/api/cam/**").permitAll() // 테스트용(나중에 변겯하기)
+                        .requestMatchers("/ws/rtsp").permitAll() // 테스트용(나중에 변경하기)
                         .anyRequest().authenticated()
                 )
 

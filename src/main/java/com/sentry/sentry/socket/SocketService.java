@@ -27,6 +27,9 @@ public class SocketService {
             String json = mapper.writeValueAsString(streamInfoDTO);
 
             // 서버로 전송 (개행 포함)
+            writer.write("render");
+            writer.newLine();
+            Thread.sleep(1000);
             writer.write(json);
             writer.newLine();
             writer.flush();

@@ -56,6 +56,15 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
+    // bytedeco
+    implementation platform('org.bytedeco:javacpp-presets:1.5.11')
+    implementation 'org.bytedeco:javacv:1.5.11'
+    implementation 'org.bytedeco:opencv-platform:4.10.0-1.5.11'
+    implementation 'org.bytedeco:ffmpeg-platform:7.1-1.5.11'
+    implementation 'org.bytedeco:openblas-platform:0.3.28-1.5.11'
+    implementation 'org.bytedeco:tesseract:5.5.0-1.5.11'
+    implementation 'org.bytedeco:leptonica:1.85.0-1.5.11'
+
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api:3.1.0'
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api:2.1.1'
 }

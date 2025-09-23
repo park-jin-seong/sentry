@@ -4,10 +4,12 @@ import Chat from './Chat'; // 1. Chat 컴포넌트 임포트
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth.jsx";
 import { api } from "./lib/api.js";
+import axios from 'axios';
 
 const Home = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { me, loading } = useAuth();
+    const [camList, setCamList] = useState([]);
     const navigate = useNavigate();
 
     const toggleSidebar = () => {
@@ -18,6 +20,24 @@ const Home = () => {
         finally {
             api.clearAccessToken?.();
             navigate("/login", { replace: true });
+        }
+    };
+
+    const getCamList = async () => {
+        console.log(me);
+        try {
+            await axios.get(`/api/cam/list/${me.id}`);
+        } catch (err) {
+            console.error("API 호출 실패", err);
+        }
+    };
+
+    const getCamInfo = async () => {
+        console.log(me);
+        try {
+            await axios.get(`/api/cam/${me.id}`);
+        } catch (err) {
+            console.error("API 호출 실패", err);
         }
     };
 
@@ -33,6 +53,8 @@ const Home = () => {
                     <a href="#" className="nav-item active">도움말</a>
                     <a href="#" className="nav-item" onClick={() => navigate("/settings")}>설정</a>
                     <a href="#" className="nav-item" onClick={onLogout} >로그아웃</a>
+                    <button onClick={getCamInfo}>요청 버튼(나중에 바꾸기)</button>
+                    <button onClick={getCamList}>현재 카메라 목록 불러오는 함수(나중에 바꾸기)</button>
                 </nav>
             </header>
 
@@ -56,9 +78,7 @@ const Home = () => {
 
                     </div>
                     <div className="video-grid">
-                        <video controls autoPlay>
-                            <source src="http://cctvsec.ktict.co.kr/149/nFkiJmSnQdzSaJDEmBGCvFgZUdPlUrWvkDbV8Jm7WkpoZsPkzMyXJ5YTQ8unOgtmSwxjyyGOSvywfyvFS7LBS+S+dV0CwUiwHoW7iZEYuW0=" type="application/x-mpegURL"/>
-                        </video>
+
                     </div>
                 </main>
             </div>
