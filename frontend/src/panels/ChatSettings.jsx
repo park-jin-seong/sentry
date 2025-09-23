@@ -7,12 +7,22 @@ const LS_KEYS = { opacity: "chat.opacity", width: "chat.widthPct" };
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const DEFAULTS = { opacity: 70, widthPct: 70 };
 
+/**
+ * CSS 변수 적용
+ * - --chat-bg-alpha: 0 = 완전 투명, 1 = 불투명
+ *   요구사항: 슬라이더 0% = 불투명 / 100% = 투명
+ *   => alpha = 1 - (pct / 100)
+ * - --chat-width-pct: 오른쪽 채팅 패널 너비 (%)
+ */
 function applyCssVars(opacityPct, widthPct) {
     const root = document.documentElement;
-    if (Number.isFinite(opacityPct))
-        root.style.setProperty("--chat-bg-alpha", String(opacityPct / 100));
-    if (Number.isFinite(widthPct))
+    if (Number.isFinite(opacityPct)) {
+        const alpha = 1 - (opacityPct / 100);            // ← 뒤집기 반영
+        root.style.setProperty("--chat-bg-alpha", String(alpha));
+    }
+    if (Number.isFinite(widthPct)) {
         root.style.setProperty("--chat-width-pct", String(widthPct));
+    }
 }
 
 export default function ChatSettings() {
@@ -86,7 +96,6 @@ export default function ChatSettings() {
                 alert(msg);
                 return;
             }
-            // 서버 응답으로 다시 확정해도 되고, 이미 state에 반영되었으니 생략 가능
         } finally {
             setSaving(false);
         }
@@ -107,21 +116,26 @@ export default function ChatSettings() {
                         {/* 투명도 */}
                         <div style={{ marginTop: 8 }}>
                             <div className="st-label">채팅 화면 투명도</div>
-                            <div className="st-help">채팅 화면의 배경 투명도를 조절합니다.</div>
+                            <div className="st-help">
+                                채팅 화면의 배경 투명도를 조절합니다.{" "}
+                            </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+                                <span className="st-min" style={{ width: 48, textAlign: "center", opacity: .8 }}>불투명</span>
                                 <input
                                     type="range" min="0" max="100" step="1"
                                     value={draft.opacity}
                                     onChange={onOpacityRange}
                                     className="st-range" style={{ flex: 1 }}
+                                    aria-label="채팅 투명도 (0=불투명, 100=투명)"
                                 />
-                                <div className="st-percentbox">
+                                <span className="st-max" style={{ width: 48, textAlign: "center", opacity: .8 }}>투명</span>
+                                <div className="st-percentbox" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <input
                                         className="st-input" type="number" min="0" max="100"
                                         value={draft.opacity} onChange={onOpacityNum}
                                         style={{ width: 64, textAlign: "right" }}
                                     />
-                                    <span style={{ marginLeft: 6, opacity: 0.8 }}>%</span>
+                                    <span style={{ opacity: 0.8 }}>%</span>
                                 </div>
                             </div>
                         </div>
@@ -131,17 +145,20 @@ export default function ChatSettings() {
                             <div className="st-label">채팅 화면 너비</div>
                             <div className="st-help">오른쪽 채팅 패널의 너비를 조절합니다.</div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+                                <span className="st-min" style={{ width: 48, textAlign: "center", opacity: .8 }}>좁게</span>
                                 <input
                                     type="range" min="20" max="100" step="1"
                                     value={draft.widthPct}
                                     onChange={onWidth}
                                     className="st-range" style={{ flex: 1 }}
+                                    aria-label="채팅 패널 너비 퍼센트"
                                 />
-                                <div className="st-percentbox">
+                                <span className="st-max" style={{ width: 48, textAlign: "center", opacity: .8 }}>넓게</span>
+                                <div className="st-percentbox" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <div className="st-input" style={{ width: 64, textAlign: "right" }}>
                                         {draft.widthPct}
                                     </div>
-                                    <span style={{ marginLeft: 6, opacity: 0.8 }}>%</span>
+                                    <span style={{ opacity: 0.8 }}>%</span>
                                 </div>
                             </div>
                         </div>
@@ -154,13 +171,20 @@ export default function ChatSettings() {
                             <button type="button" className="st-btn" onClick={onCancel}>
                                 취소
                             </button>
-                            <button type="button" className="st-primary" onClick={onApply} style={{ marginLeft: "auto" }} disabled={saving}>
+                            <button
+                                type="button"
+                                className="st-primary"
+                                onClick={onApply}
+                                style={{ marginLeft: "auto" }}
+                                disabled={saving}
+                            >
                                 {saving ? "저장 중…" : "적용"}
                             </button>
                         </div>
 
                         <div className="st-help" style={{ marginTop: 12 }}>
-                            현재 적용값 · 투명도 <b>{applied.opacity}%</b>, 너비 <b>{applied.widthPct}%</b>
+                            <div style={{ opacity: 0.7, marginTop: 4, fontSize: 12 }}>
+                            </div>
                         </div>
                     </>
                 )}
