@@ -20,7 +20,7 @@ const CameraFeed = () => {
 
         ws.onmessage = (event) => {
             if (imgRef.current) {
-                console.log(event);
+                //console.log(event);
                 imgRef.current.src = "data:image/jpeg;base64," + event.data;
             }
         };

@@ -26,7 +26,11 @@ const Home = () => {
       navigate("/login", { replace: true });
     }
   };
-
+    useEffect(() => {
+        if (me?.id && !loading) {
+            getCamList();
+        }
+    }, [me, loading]);
   const getCamList = async () => {
     if (!me?.id) return; // me 객체가 없으면 API 호출을 막습니다.
     try {
@@ -76,22 +80,19 @@ const Home = () => {
         </nav>
       </header>
 
-      <div className="main-content">
-        <aside className="sidebar">
-          <ul className="sidebar-menu">
-            {camList.map((cam, index) => (
-              <li key={cam.id || index} className="sidebar-item">
-                {`${index + 1}. [${cam.cameraName}]`}
-              </li>
-            ))}
-          </ul>
-        </aside>
+        <div className="main-content">
+            <aside className="sidebar">
+                <ul className="sidebar-menu">
+                    {camList.map((cam, index) => (
+                        <li key={cam.id || index} className="sidebar-item">
+                            {`${index + 1}. [${cam.cameraName}]`}
+                        </li>
+                    ))}
+                </ul>
+            </aside>
 
-        <main className="content-area">
-          <div className="content-header"></div>
-          <div className="video-grid">
-            <CameraFeed></CameraFeed>
-          </div>
+            <main className="content-area">
+                    <CameraFeed></CameraFeed>
         </main>
       </div>
 

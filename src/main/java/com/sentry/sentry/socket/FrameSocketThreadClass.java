@@ -30,7 +30,7 @@ public class FrameSocketThreadClass {
         m_thread = new Thread(() ->{
             Run();
         });
-        frameQueues = new LinkedBlockingQueue<>(1);
+        frameQueues = new LinkedBlockingQueue<>(10);
     }
     public void Start()
     {
