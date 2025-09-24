@@ -32,7 +32,7 @@ const Home = () => {
 
                 <nav className="nav-menu">
                     <a href="#" className="nav-item">검색</a>
-                    <a href="#" className="nav-item active">도움말</a>
+                    <a href="#" className="nav-item">도움말</a>
                     <a
                         href="#"
                         className="nav-item"

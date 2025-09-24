@@ -112,3 +112,64 @@
 }
 .st-pwbox .st-eye:hover img{ opacity: 1; transform: scale(1.06); }
 .st-pwbox .st-eye:active img{ transform: scale(0.94); }
+
+
+/*카메라 설정 팝업 css*/
+
+/* ---- Add Camera Modal ---- */
+.modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.35);
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+}
+.modal-sheet{
+    width:min(880px, 94vw);
+    background: #484E58;
+    color:var(--text,#eaeaea);
+    border-radius:16px;
+    box-shadow: 0 20px 70px rgba(0,0,0,.5);
+}
+.modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 0 16px;
+}
+.tabs{ background:#3D434D; padding:6px; border-radius:10px; display:inline-flex; gap:6px; }
+.tab{
+    border:none; height:36px; padding:0 18px; border-radius:8px; cursor:pointer;
+    background:transparent; color:var(--text,#eaeaea); font-weight:700;
+}
+.tab.is-active{ background:var(--primary,#207590); color:#fff; }
+.modal-x{
+    border:none; background:transparent; color:var(--sub,#c9c9c9); font-size:28px; line-height:1; cursor:pointer;
+}
+.modal-body{
+    display:grid; grid-template-columns: 260px 1fr; gap:16px; padding:12px 16px 16px 16px;
+}
+.add-left{
+    background:#3D434D; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;
+}
+.lbl{ font-size:12px; color:var(--sub,#c9c9c9); }
+.inp{
+    height:36px; border-radius:8px; border:1px solid #484E58;
+    background:#484E58; color:var(--text,#eaeaea); padding:0 10px;
+}
+.wide{ width:100%; margin-top:6px; }
+
+.add-right{
+    background:#3D434D; border-radius:12px; padding:10px;
+    max-height:520px; overflow:auto;
+}
+.result-list{ list-style:none; padding:0; margin:0; }
+.result-item{
+    padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer;
+    display:flex; gap:8px; align-items:center; color:var(--text,#eaeaea);
+}
+.result-item:hover{ background:rgba(255,255,255,.06); }
+.result-item:last-child{ border-bottom:none; }
+.idx{ color:var(--sub,#c9c9c9); width:28px; text-align:right; }
+.nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* 기존 버튼 클래스 재사용 */
+.btn{ height:34px; padding:0 12px; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+.btn-primary{ background:var(--primary,#207590); color:#fff; }
+.btn-danger{ background:#b91c1c; color:#fff; }

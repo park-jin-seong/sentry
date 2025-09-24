@@ -159,7 +159,7 @@ const Chat = () => {
                             }
                         }
 
-                        // 2) messageId(DB PK) 중복 방지
+                        // 2) messageId 중복 방지
                         if (messageBody.messageId) {
                             const exists = updated.some(
                                 (m) => m.messageId === messageBody.messageId
