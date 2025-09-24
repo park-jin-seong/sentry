@@ -4,7 +4,7 @@ import Chat from './Chat';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth.jsx";
 import { api } from "./lib/api.js";
-import sentryLogo from "./assets/sentryLogo.jpg"
+import sentryLogo from "./assets/sentryLogo.png"
 
 const Home = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
