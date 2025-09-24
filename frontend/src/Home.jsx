@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import './Home.css';
-import Chat from './Chat'; // 1. Chat 컴포넌트 임포트
+import Chat from './Chat';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth.jsx";
 import { api } from "./lib/api.js";
+import sentryLogo from "./assets/sentryLogo.png"
 
 const Home = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { me, loading } = useAuth();
     const navigate = useNavigate();
 
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
+    const isObserver = !!me?.roles?.includes?.("ROLE_OBSERVER");
+
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
     const onLogout = async () => {
         try { await api("/api/auth/logout", { method: "POST" }); }
         finally {
@@ -23,22 +25,29 @@ const Home = () => {
 
     return (
         <div className="app-container">
-
             <header className="top-bar">
                 <div className="logo-container">
-                    <span className="logo">SENTRY</span>
+                    <img src={sentryLogo} alt="SENTRY" className="logo-img" />
                 </div>
+
                 <nav className="nav-menu">
                     <a href="#" className="nav-item">검색</a>
-                    <a href="#" className="nav-item active">도움말</a>
-                    <a href="#" className="nav-item" onClick={() => navigate("/settings")}>설정</a>
-                    <a href="#" className="nav-item" onClick={onLogout} >로그아웃</a>
+                    <a href="#" className="nav-item">도움말</a>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            navigate(isObserver ? "/settings?tab=chat" : "/settings");
+                        }}
+                    >
+                        {isObserver ? "채팅 설정" : "설정"}
+                    </a>
+                    <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>
                 </nav>
             </header>
 
-
             <div className="main-content">
-
                 <aside className="sidebar">
                     <ul className="sidebar-menu">
                         <li className="sidebar-item">01. [화재진압] 영상</li>
@@ -50,18 +59,13 @@ const Home = () => {
                     </ul>
                 </aside>
 
-
                 <main className="content-area">
-                    <div className="content-header">
-
-                    </div>
-                    <div className="video-grid">
-
-                    </div>
+                    <div className="content-header" />
+                    <div className="video-grid" />
                 </main>
             </div>
 
-
+            {/* 우측 접이식 채팅 패널 */}
             <div className={`collapsible-bar ${isSidebarOpen ? 'open' : ''}`}>
                 <button className="toggle-btn" onClick={toggleSidebar}>
                     <div className="toggle-icon">...</div>

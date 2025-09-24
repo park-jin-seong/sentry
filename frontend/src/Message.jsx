@@ -1,9 +1,10 @@
 const Message = ({ msg, currentUserId }) => {
-    const isMyMessage = msg.senderId === currentUserId;
+     const isMyMessage = currentUserId && msg.senderId &&
+           String(msg.senderId) === String(currentUserId);
 
     return (
         <div
-            key={msg.messageId || msg.optimisticId}
+            key={msg.messageId || msg.id || msg.optimisticId}
             className={`message-container ${isMyMessage ? 'my-message' : 'other-message'}`}
         >
             <div className="message-bubble">

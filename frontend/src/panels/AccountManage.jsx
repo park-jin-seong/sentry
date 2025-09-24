@@ -1,21 +1,21 @@
-// src/panels/AccountManage.jsx
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api.js";
+import {useEffect, useMemo, useState} from "react";
+import {api} from "../lib/api.js";               // ← 프로젝트 구조에 맞게 조정
 import "../Settings.css";
+
+// 아이콘 이미지
+import eyeIcon from "../assets/eye.png";
+import hideIcon from "../assets/hide.png";
 
 /**
  * 서버 규약
- * - 비밀번호 필드명은 userpassword (백엔드 DTO/엔티티에 맞춤)
- * - 목록 조회는 role 쿼리 파라미터로 대상 역할을 지정:
- *    - MASTER  →  role=OWNER
- *    - OWNER   →  role=OBSERVER
+ * - 비밀번호 필드명은 userpassword
+ * - 목록 조회는 role 쿼리 파라미터로 대상 역할 지정
  */
 const ENDPOINTS = {
-    // role: "OWNER" | "OBSERVER"
-    list: (role) => `/api/accounts${role ? `?role=${encodeURIComponent(role)}` : ""}`, // GET: [{ username, nickname?, role? }, ...]
-    create: "/api/accounts/create", // POST body: { username, userpassword, nickname? }
-    resetPw: (username) => `/api/accounts/${encodeURIComponent(username)}/userpassword`, // PATCH body: { userpassword }
-    remove: (username) => `/api/accounts/${encodeURIComponent(username)}`, // DELETE
+    list: (role) => `/api/accounts${role ? `?role=${encodeURIComponent(role)}` : ""}`,
+    create: "/api/accounts/create",
+    resetPw: (username) => `/api/accounts/${encodeURIComponent(username)}/userpassword`,
+    remove: (username) => `/api/accounts/${encodeURIComponent(username)}`,
 };
 
 export default function AccountManage() {
@@ -64,7 +64,6 @@ export default function AccountManage() {
                 } else {
                     setErrorMsg("내 정보 조회 실패");
                 }
-
                 await fetchListOnce();
             } finally {
                 setLoading(false);
@@ -81,19 +80,14 @@ export default function AccountManage() {
 
     const fetchListOnce = async () => {
         setErrorMsg("");
-        // 조회 권한 체크: MASTER→OWNER, OWNER→OBSERVER만
-        // if (!viewRole) {
-        //     setItems([]);
-        //     setErrorMsg("조회 가능한 대상 역할이 없습니다.");
-        //     return;
-        // }
-
         try {
             const res = await api(ENDPOINTS.list(viewRole));
             const status = res.status;
             const text = await res.text();
             let data = null;
-            try { data = text ? JSON.parse(text) : null; } catch (e) {
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
                 console.error("JSON parse error", e, text);
             }
 
@@ -124,8 +118,7 @@ export default function AccountManage() {
         }
     };
 
-    const onChange = (k) => (e) =>
-        setForm((s) => ({ ...s, [k]: e.target.value }));
+    const onChange = (k) => (e) => setForm((s) => ({...s, [k]: e.target.value}));
 
     const onCreate = async (e) => {
         e.preventDefault();
@@ -141,18 +134,11 @@ export default function AccountManage() {
 
         setBusy(true);
         try {
-            const body = {
-                username,
-                userpassword: pw, // ★ 서버 필드명 유지
-            };
+            const body = {username, userpassword: pw}; // 서버 필드명 userpassword
             const nick = form.nickname.trim();
             if (nick) body.nickname = nick;
 
-            const res = await api(ENDPOINTS.create, {
-                method: "POST",
-                body: JSON.stringify(body),
-            });
-
+            const res = await api(ENDPOINTS.create, {method: "POST", body: JSON.stringify(body)});
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 alert(data?.error || "생성 실패");
@@ -160,7 +146,7 @@ export default function AccountManage() {
             }
 
             alert(`생성 완료: ${data.username || username} (${data.role || nextCreatableRole})`);
-            setForm({ username: "", userpassword: "", nickname: "", showPw: false });
+            setForm({username: "", userpassword: "", nickname: "", showPw: false});
             await fetchListOnce();
         } finally {
             setBusy(false);
@@ -176,7 +162,7 @@ export default function AccountManage() {
         }
         const res = await api(ENDPOINTS.resetPw(username), {
             method: "PATCH",
-            body: JSON.stringify({ userpassword: pw }), // ★ 서버 필드명 유지
+            body: JSON.stringify({userpassword: pw}), // 서버 필드명 userpassword
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -189,7 +175,7 @@ export default function AccountManage() {
 
     const onRemove = async (username) => {
         if (!window.confirm(`정말 삭제할까요?\n계정: ${username}`)) return;
-        const res = await api(ENDPOINTS.remove(username), { method: "DELETE" });
+        const res = await api(ENDPOINTS.remove(username), {method: "DELETE"});
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
             alert(data?.error || "삭제 실패");
@@ -201,13 +187,11 @@ export default function AccountManage() {
     return (
         <section className="st-panel">
             {/* 생성 폼 */}
-            <div className="st-card" style={{ marginBottom: 16, maxWidth: 560 }}>
+            <div className="st-card" style={{marginBottom: 16, maxWidth: 560}}>
                 <h3 className="st-h3">계정 생성</h3>
-                <p className="st-label" style={{ marginBottom: 8 }}>
+                <p className="st-label" style={{marginBottom: 8}}>
                     내 역할: <b>{myRole}</b>{" "}
-                    {nextCreatableRole !== "-" && (
-                        <> · 생성 가능한 역할: <b>{nextCreatableRole}</b></>
-                    )}
+                    {nextCreatableRole !== "-" && <> · 생성 가능한 역할: <b>{nextCreatableRole}</b></>}
                 </p>
 
                 <form className="st-form" onSubmit={onCreate}>
@@ -223,18 +207,19 @@ export default function AccountManage() {
                     <div className="st-pwbox">
                         <input
                             className="st-input pw"
-                            type={form.showPw ? "text" : "password"}  // ★ HTML 표준: password
-                            value={form.userpassword}                 // ★ 전송 키는 userpassword
+                            type={form.showPw ? "text" : "password"}
+                            value={form.userpassword}
                             onChange={onChange("userpassword")}
-                            placeholder="초기 비밀번호 (8자 이상)"
+                            placeholder="비밀번호"
                             autoComplete="new-password"
                         />
                         <button
                             type="button"
                             className="st-eye"
-                            onClick={() => setForm((s) => ({ ...s, showPw: !s.showPw }))}
+                            onClick={() => setForm(s => ({...s, showPw: !s.showPw}))}
+                            aria-label={form.showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
                         >
-                            {form.showPw ? "notshow" : "show"}
+                            <img src={form.showPw ? hideIcon : eyeIcon} alt=""/>
                         </button>
                     </div>
 
@@ -253,13 +238,13 @@ export default function AccountManage() {
             </div>
 
             {/* 목록 테이블 */}
-            <div className="st-card" style={{ maxWidth: 760 }}>
+            <div className="st-card" style={{maxWidth: 760}}>
                 <h3 className="st-h3">계정 목록</h3>
-                <p className="st-label" style={{ marginBottom: 8 }}>
+                <p className="st-label" style={{marginBottom: 8}}>
                     {viewRole ? <>보는 대상: <b>{viewRole}</b></> : "조회 대상 없음"}
                 </p>
                 {errorMsg && (
-                    <div className="st-label" style={{ color: "#f66", marginBottom: 8 }}>
+                    <div className="st-label" style={{color: "#f66", marginBottom: 8}}>
                         {errorMsg}
                     </div>
                 )}
@@ -277,23 +262,23 @@ export default function AccountManage() {
                             overflow: "auto",
                         }}
                     >
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <table style={{width: "100%", borderCollapse: "collapse"}}>
                             <thead>
-                            <tr style={{ textAlign: "left", opacity: 0.8 }}>
-                                <th style={{ padding: "8px 10px" }}>아이디</th>
-                                <th style={{ padding: "8px 10px" }}>닉네임</th>
-                                <th style={{ padding: "8px 10px" }}>역할</th>
-                                <th style={{ padding: "8px 10px", width: 220 }}>액션</th>
+                            <tr style={{textAlign: "left", opacity: 0.8}}>
+                                <th style={{padding: "8px 10px"}}>아이디</th>
+                                <th style={{padding: "8px 10px"}}>닉네임</th>
+                                <th style={{padding: "8px 10px"}}>역할</th>
+                                <th style={{padding: "8px 10px", width: 220}}>액션</th>
                             </tr>
                             </thead>
                             <tbody>
                             {items.map((u) => (
-                                <tr key={u.username} style={{ borderTop: "1px solid #ffffff14" }}>
-                                    <td style={{ padding: "10px" }}>{u.username}</td>
-                                    <td style={{ padding: "10px" }}>{u.nickname || "-"}</td>
-                                    <td style={{ padding: "10px" }}>{(u.role || "").toString()}</td>
-                                    <td style={{ padding: "10px" }}>
-                                        <div style={{ display: "flex", gap: 8 }}>
+                                <tr key={u.username} style={{borderTop: "1px solid #ffffff14"}}>
+                                    <td style={{padding: "10px"}}>{u.username}</td>
+                                    <td style={{padding: "10px"}}>{u.nickname || "-"}</td>
+                                    <td style={{padding: "10px"}}>{(u.role || "").toString()}</td>
+                                    <td style={{padding: "10px"}}>
+                                        <div style={{display: "flex", gap: 8}}>
                                             <button
                                                 type="button"
                                                 className="st-btn"

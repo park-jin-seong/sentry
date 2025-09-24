@@ -1,18 +1,18 @@
-// src/components/settings/panels/MyAccount.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import "../Settings.css";
 import { useAuth } from "../auth.jsx";
 
-// 타임스탬프(초) → 로컬 문자열
+import eyeIcon from "../assets/eye.png";
+import hideIcon from "../assets/hide.png";
+
 function fmt(tsSec) {
     if (!tsSec) return "-";
     const d = new Date(tsSec * 1000);
     return d.toLocaleString();
 }
 
-// JWT payload 디코더 (fallback)
 function decodeJwtLocal(token) {
     try {
         const base64Url = token.split(".")[1];
@@ -33,7 +33,6 @@ export default function MyAccount() {
     const { reload } = useAuth();
     const navigate = useNavigate();
 
-    // 프로필 상태
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({
         username: "",
@@ -42,12 +41,10 @@ export default function MyAccount() {
         showPw: false,
     });
 
-    // 토큰 표시 상태
     const [tokVer, setTokVer] = useState(0);
     const [showToken, setShowToken] = useState(false);
     const [refreshBusy, setRefreshBusy] = useState(false);
 
-    // 현재 accessToken / payload
     const token = useMemo(() => api.peekAccessToken?.(), [tokVer]);
     const decode = api.decodeJwtPayload || decodeJwtLocal;
     const payload = useMemo(() => (token ? decode(token) : null), [token]);
@@ -55,7 +52,6 @@ export default function MyAccount() {
     const nowSec = Math.floor(Date.now() / 1000);
     const expLeft = payload?.exp ? Math.max(payload.exp - nowSec, 0) : null;
 
-    // 초기 내 정보 로드
     useEffect(() => {
         let mounted = true;
         (async () => {
@@ -79,10 +75,8 @@ export default function MyAccount() {
         };
     }, [navigate]);
 
-    // 프로필 입력
     const onChange = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
 
-    // 프로필 저장
     const onSubmit = async (e) => {
         e.preventDefault();
         if (saving) return;
@@ -109,7 +103,6 @@ export default function MyAccount() {
         }
     };
 
-    // 토큰 관련 액션
     const logToken = () => {
         const t = api.peekAccessToken?.();
         console.log("[MyAccount] accessToken:", t || "<none>");
@@ -146,10 +139,8 @@ export default function MyAccount() {
         }
     };
 
-    // === 여기부터는 패널 내용만 ===
     return (
         <section className="st-panel">
-
             {/* 프로필 카드 */}
             <div className="st-card" style={{ marginBottom: 16 }}>
                 <h3 className="st-h3">프로필</h3>
@@ -172,16 +163,16 @@ export default function MyAccount() {
                             type={form.showPw ? "text" : "password"}
                             value={form.userpassword}
                             onChange={onChange("userpassword")}
-                            placeholder="새 비밀번호(선택)"
+                            placeholder="비밀번호"
                             autoComplete="new-password"
                         />
                         <button
                             type="button"
                             className="st-eye"
                             onClick={() => setForm((s) => ({ ...s, showPw: !s.showPw }))}
-                            aria-label="비밀번호 보기 전환"
+                            aria-label={form.showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
                         >
-                            {form.showPw ? "notshow" : "show"}
+                            <img src={form.showPw ? hideIcon : eyeIcon} alt="" />
                         </button>
                     </div>
 
