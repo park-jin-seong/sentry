@@ -169,11 +169,11 @@ export default function MyAccount() {
                     <div className="st-pwbox">
                         <input
                             className="st-input pw"
-                            type={form.showPw ? "text" : "userpassword"}
+                            type={form.showPw ? "text" : "password"}
                             value={form.userpassword}
                             onChange={onChange("userpassword")}
                             placeholder="새 비밀번호(선택)"
-                            autoComplete="new-userpassword"
+                            autoComplete="new-password"
                         />
                         <button
                             type="button"

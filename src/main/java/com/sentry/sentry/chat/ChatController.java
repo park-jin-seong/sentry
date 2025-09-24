@@ -11,6 +11,8 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,20 +29,45 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/{roomId}")
-    @SendTo("/room/{roomId}")
-    public MessageDTO sendMessage(@Payload MessageDTO messageDTO, @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable String roomId) {
-        if(customUserDetails.getId() == null){
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>사용자id null");
-        }
-        messageDTO.setSenderId(customUserDetails.getId());
+//    @MessageMapping("/{roomId}")
+//    @SendTo("/room/{roomId}")
+//    public MessageDTO sendMessage(@Payload MessageDTO messageDTO, @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable String roomId) {
+//        if(customUserDetails.getId() == null){
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>사용자id null");
+//        }
+//        messageDTO.setSenderId(customUserDetails.getId());
+//        messageDTO.setCreatedAt(LocalDateTime.now());
+//        Message savedMessage = chatService.saveMessage(messageDTO);
+//        MessageDTO returnMessageDTO = chatService.convertMessageDTO(savedMessage);
+//        returnMessageDTO.setOptimisticId(messageDTO.getOptimisticId());
+//        return returnMessageDTO;
+//    }
+
+    // 새로 작성
+    @MessageMapping("/chat/{roomId}")   // 클라 전송: /send/chat/{roomId}
+    public void sendMessage(@Payload MessageDTO messageDTO,
+                            @DestinationVariable Long roomId,
+                            Principal principal) {
+
+        var auth = (Authentication) principal;
+        var cud  = (CustomUserDetails) auth.getPrincipal();
+
+        messageDTO.setSenderId(cud.getId());
+        messageDTO.setRoomId(roomId);
         messageDTO.setCreatedAt(LocalDateTime.now());
-        Message savedMessage = chatService.saveMessage(messageDTO);
-        MessageDTO returnMessageDTO = chatService.convertMessageDTO(savedMessage);
-        returnMessageDTO.setOptimisticId(messageDTO.getOptimisticId());
-        return returnMessageDTO;
+
+        Message saved = chatService.saveMessage(messageDTO);
+        MessageDTO out = chatService.convertMessageDTO(saved);
+
+        out.setOptimisticId(messageDTO.getOptimisticId());
+
+        messagingTemplate.convertAndSend("/room/" + roomId, out);
     }
+
+
+
 
     @GetMapping("/room/{roomId}")
     public Slice<MessageDTO> getMessages(
