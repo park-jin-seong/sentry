@@ -10,8 +10,8 @@ import {api} from "./lib/api.js";
 import {useAuth} from './auth.jsx';
 
 const Chat = () => {
-    const {user} = useAuth();
-    const currentUserId = user && user.id ? user.id : null;
+    const { me } = useAuth();
+    const currentUserId = me && me.id ? String(me.id) : null;
 
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
@@ -50,11 +50,21 @@ const Chat = () => {
                 }
             });
 
-            const newMessages = response.data.content;
+             const raw = response.data.content || [];
+             const newMessages = raw.map(m => ({
+                   ...m,
+                   messageId: m.messageId ?? m.id,
+                   senderId: m.senderId ?? m.userId,
+                   content: m.content ?? m.text,
+                   createdAt: m.createdAt ?? m.ts
+             }));
             setHasMore(!response.data.last);
 
             if (newMessages.length > 0) {
-                setMessages(prevMessages => [...prevMessages, ...newMessages]);
+                   setMessages(prev => {
+                         const merged = [...prev, ...newMessages];
+                         return merged.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+                       });
             }
         } catch (error) {
             console.error("Failed to fetch messages:", error);
@@ -87,8 +97,8 @@ const Chat = () => {
             const {scrollTop} = chatDiv;
 
             if (scrollTop <= 5 && !isLoadingMessages.current && hasMore) {
-                const lastMessage = messagesRef.current[messagesRef.current.length - 1];
-                const lastMessageId = lastMessage?.messageId;
+                const oldest = messagesRef.current[0];
+                const lastMessageId = oldest?.messageId ?? oldest?.id;
 
                 if (lastMessageId) {
                     fetchMessages(lastMessageId);
@@ -124,14 +134,16 @@ const Chat = () => {
 
             stompClient.subscribe(subscribeUrl, (message) => {
                 const messageBody = JSON.parse(message.body);
-                setMessages(prevMessages => {
-                    const isOptimistic = prevMessages.some(msg => msg.optimisticId === messageBody.optimisticId);
-                    if (isOptimistic) {
-                        return prevMessages.map(msg => msg.optimisticId === messageBody.optimisticId ? messageBody : msg);
-                    } else {
-                        return [messageBody, ...prevMessages];
-                    }
-                });
+                 setMessages(prevMessages => {
+                      const isOptimistic = prevMessages.some(msg => msg.optimisticId === messageBody.optimisticId);
+                       if (isOptimistic) {
+                             return prevMessages.map(msg =>
+                                   msg.optimisticId === messageBody.optimisticId ? messageBody : msg
+                                    );
+                          } else {
+                            return [...prevMessages, messageBody];
+                          }
+                    });
             });
         }, (error) => {
             console.log('Connection error: ' + error);
@@ -170,10 +182,13 @@ const Chat = () => {
                 content: messageInput,
                 createdAt: new Date().toISOString()
             };
-            setMessages(prevMessages => [tmpMessage, ...prevMessages]);
+            setMessages(prevMessages => [...prevMessages, tmpMessage]);
 
             stompClientRef.current.send(publishUrl, {}, JSON.stringify(messageDTO));
             setMessageInput('');
+            if (chatContainerRef.current) {
+                  chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                 }
         }
     };
 
@@ -181,7 +196,7 @@ const Chat = () => {
         <div id="chat-root" className="chat-shell">
             <div className="chat-container">
                 <div className="chat-messages" ref={chatContainerRef}>
-                    {messages.slice().reverse().map((msg) => (
+                    {messages.map((msg) => (
                         <Message
                             key={msg.messageId || msg.optimisticId}
                             msg={msg}
