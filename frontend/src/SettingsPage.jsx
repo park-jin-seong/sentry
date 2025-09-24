@@ -5,6 +5,7 @@ import { TABS } from "./tabs.js";
 import { PANEL_MAP } from "./panelMap.js";
 import "./settings.css";
 import { useAuth } from "./auth.jsx";
+import sentryLogo from "./assets/sentryLogo.png";
 
 export default function SettingsPage() {
     const navigate = useNavigate();
@@ -83,7 +84,14 @@ export default function SettingsPage() {
         <div className="settings-page">
             {/* 왼쪽 사이드바 */}
             <aside className="settings-sidebar">
-                <div className="settings-logo">SENTRY</div>
+                <div className="settings-logo">
+                    <img
+                        src={sentryLogo}
+                        alt="SENTRY Logo"
+                        className="settings-logo-img"
+                        draggable="false"
+                    />
+                </div>
 
                 <div className="sidebar-section-title">사용자 설정</div>
                 {TABS.slice(0, 3).map(renderTabButton)}
