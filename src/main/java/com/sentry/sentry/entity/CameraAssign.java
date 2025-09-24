@@ -1,6 +1,7 @@
 package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -8,6 +9,10 @@ import java.io.Serializable;
 @Table(name = "cameraassign", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"userId", "assignedcameraId"}, name = "uq_user_camera")
 })
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CameraAssign implements Serializable {
 
     @Id

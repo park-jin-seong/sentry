@@ -1,74 +1,17 @@
-// src/components/settings/CameraSettings.jsx
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api.js"; // 경로 확인
+import { useEffect, useState } from "react";
+import { api } from "../lib/api.js";
 
 export default function CameraSettings() {
     const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [err, setErr] = useState("");
-    const [saving, setSaving] = useState(false);
     const [showAdd, setShowAdd] = useState(false);
 
-    // 목록 로드
-    useEffect(() => {
-        (async () => {
-            setLoading(true); setErr("");
-            try {
-                const r = await api("/api/cameras", { credentials: "include" });
-                if (!r.ok) throw new Error("목록을 불러올 수 없어요.");
-                const list = await r.json();
-                setItems(Array.isArray(list) ? list : []);
-            } catch (e) {
-                setErr(e.message || "오류가 발생했어요.");
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
-
-    // 추가 실행 (모달에서 항목 선택 시 호출)
-    const addBySelection = async (selected) => {
-        // selected 예시: { name, lat, lon, roadType, ... }
-        const tempId = `tmp-${Date.now()}`;
-        const optimistic = { id: tempId, name: selected.name, ...selected };
-        setItems((prev) => [optimistic, ...prev]);
-
-        try {
-            setSaving(true);
-            // 실제 생성 API로 변경하세요.
-            const r = await api("/api/cameras", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(selected),
-            });
-            if (!r.ok) throw new Error("추가 실패");
-            const created = await r.json();
-            setItems((prev) => prev.map((it) => (it.id === tempId ? created : it)));
-        } catch (e) {
-            alert(e.message || "추가에 실패했습니다.");
-            setItems((prev) => prev.filter((it) => it.id !== tempId));
-        } finally {
-            setSaving(false);
-            setShowAdd(false);
-        }
+    const addBySelection = (selected) => {
+        const id = selected.cctvurl ?? `tmp-${Date.now()}`;
+        setItems((prev) => [{ id, name: selected.name ?? selected.cctvname, ...selected }, ...prev]);
+        setShowAdd(false);
     };
 
-    const onDelete = async (id) => {
-        if (!confirm("정말 삭제하시겠어요?")) return;
-        const snapshot = items;
-        setItems((prev) => prev.filter((it) => it.id !== id));
-        try {
-            const r = await api(`/api/cameras/${id}`, {
-                method: "DELETE",
-                credentials: "include",
-            });
-            if (!r.ok) throw new Error("삭제 실패");
-        } catch (e) {
-            alert(e.message || "삭제에 실패했습니다.");
-            setItems(snapshot);
-        }
-    };
+    const onDelete = (id) => setItems((prev) => prev.filter((it) => it.id !== id));
 
     return (
         <div className="camera-settings">
@@ -78,7 +21,7 @@ export default function CameraSettings() {
                 <div className="settings-block-head">
                     <div>
                         <div className="settings-block-title">카메라 목록</div>
-                        <div className="settings-block-desc">카메라 추가와 수정 및 삭제가 가능합니다.</div>
+                        <div className="settings-block-desc">ITS에서 검색해 추가할 수 있습니다.</div>
                     </div>
                     <button className="btn btn-primary" onClick={() => setShowAdd(true)}>추가</button>
                 </div>
@@ -89,34 +32,25 @@ export default function CameraSettings() {
                         <div className="col-actions" />
                     </div>
                     <div className="camera-body">
-                        {loading && <div className="camera-empty">불러오는 중…</div>}
-                        {!loading && items.length === 0 && (
-                            <div className="camera-empty">카메라가 없습니다.</div>
+                        {items.length === 0 && (
+                            <div className="camera-empty">카메라가 없습니다. 오른쪽 위 “추가”로 검색하세요.</div>
                         )}
-                        {!loading &&
-                            items.map((it) => (
-                                <div className="camera-row" key={it.id}>
-                                    <div className="col-name">
-                                        <span className="camera-name">{it.name}</span>
-                                    </div>
-                                    <div className="col-actions">
-                                        <button className="btn btn-danger" onClick={() => onDelete(it.id)}>
-                                            삭제
-                                        </button>
-                                    </div>
+                        {items.map((it) => (
+                            <div className="camera-row" key={it.id}>
+                                <div className="col-name">
+                                    <span className="camera-name">{it.name ?? it.cctvname}</span>
                                 </div>
-                            ))}
+                                <div className="col-actions">
+                                    <button className="btn btn-danger" onClick={() => onDelete(it.id)}>삭제</button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
-
-                {err && <div className="settings-error">{err}</div>}
             </div>
 
             {showAdd && (
-                <AddCameraModal
-                    onClose={() => setShowAdd(false)}
-                    onPick={addBySelection}
-                />
+                <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />
             )}
         </div>
     );
@@ -124,11 +58,13 @@ export default function CameraSettings() {
 
 /** 추가 모달 */
 function AddCameraModal({ onClose, onPick }) {
-    const [tab, setTab] = useState("EXP"); // EXP=고속, NAT=국도
-    const [lat1, setLat1] = useState("");
-    const [lat2, setLat2] = useState("");
-    const [lon1, setLon1] = useState("");
-    const [lon2, setLon2] = useState("");
+    // 탭(고속/국도) -> cctvType = 1 | 2
+    const [cctvType, setCctvType] = useState(1);
+    const [minX, setMinX] = useState("126");
+    const [maxX, setMaxX] = useState("127");
+    const [minY, setMinY] = useState("34");
+    const [maxY, setMaxY] = useState("35");
+
     const [loading, setLoading] = useState(false);
     const [list, setList] = useState([]);
     const [err, setErr] = useState("");
@@ -142,21 +78,26 @@ function AddCameraModal({ onClose, onPick }) {
     const search = async () => {
         setLoading(true); setErr(""); setList([]);
         try {
-            // 필요한 파라미터/엔드포인트에 맞게 변경하세요.
-            // 예: POST /api/roads/search  { roadType, lat1, lat2, lon1, lon2 }
-            const r = await api("/api/roads/search", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    roadType: tab,   // "EXP" | "NAT"
-                    lat1, lat2, lon1, lon2,
-                }),
-            });
+            const qs = new URLSearchParams({
+                cctvType: String(cctvType),
+                minX: String(minX),
+                maxX: String(maxX),
+                minY: String(minY),
+                maxY: String(maxY),
+            }).toString();
+
+            const r = await api(`/api/its/cctv?${qs}`, { credentials: "include" });
             if (!r.ok) throw new Error("검색에 실패했어요.");
-            const data = await r.json();
-            // data 예시: [{ id, name, lat, lon }, ...]
-            setList(Array.isArray(data) ? data : []);
+            const json = await r.json();
+            const rows = (json?.response?.data ?? []).map((d, i) => ({
+                id: d.cctvurl ?? i,
+                name: d.cctvname,
+                cctvurl: d.cctvurl,
+                coordx: d.coordx,
+                coordy: d.coordy,
+                cctvformat: d.cctvformat,
+            }));
+            setList(rows);
         } catch (e) {
             setErr(e.message || "검색 오류");
         } finally {
@@ -170,14 +111,16 @@ function AddCameraModal({ onClose, onPick }) {
                 <div className="modal-head">
                     <div className="tabs">
                         <button
-                            className={`tab ${tab === "EXP" ? "is-active" : ""}`}
-                            onClick={() => setTab("EXP")}
+                            className={`tab ${cctvType === 1 ? "is-active" : ""}`}
+                            onClick={() => setCctvType(1)}
+                            type="button"
                         >
                             고속
                         </button>
                         <button
-                            className={`tab ${tab === "NAT" ? "is-active" : ""}`}
-                            onClick={() => setTab("NAT")}
+                            className={`tab ${cctvType === 2 ? "is-active" : ""}`}
+                            onClick={() => setCctvType(2)}
+                            type="button"
                         >
                             국도
                         </button>
@@ -186,21 +129,63 @@ function AddCameraModal({ onClose, onPick }) {
                 </div>
 
                 <div className="modal-body">
+                    {/* 왼쪽 사이드바 */}
                     <aside className="add-left">
-                        <label className="lbl">위도</label>
-                        <input className="inp" value={lat1} onChange={(e)=>setLat1(e.target.value)} />
-                        <label className="lbl">위도</label>
-                        <input className="inp" value={lat2} onChange={(e)=>setLat2(e.target.value)} />
-                        <label className="lbl">경도</label>
-                        <input className="inp" value={lon1} onChange={(e)=>setLon1(e.target.value)} />
-                        <label className="lbl">경도</label>
-                        <input className="inp" value={lon2} onChange={(e)=>setLon2(e.target.value)} />
+
+
+                        {/* 위도 */}
+                        <div className="pair">
+                            <div className="pair-item">
+                                <label className="lbl">최소 위도</label>
+                                <input
+                                    className="inp"
+                                    value={minY}
+                                    onChange={(e) => setMinY(e.target.value)}
+                                    placeholder="예: 34"
+                                />
+                            </div>
+                            <div className="pair-sep">~</div>
+                            <div className="pair-item">
+                                <label className="lbl">최대 위도</label>
+                                <input
+                                    className="inp"
+                                    value={maxY}
+                                    onChange={(e) => setMaxY(e.target.value)}
+                                    placeholder="예: 35"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 경도 */}
+                        <div className="pair">
+                            <div className="pair-item">
+                                <label className="lbl">최소 경도</label>
+                                <input
+                                    className="inp"
+                                    value={minX}
+                                    onChange={(e) => setMinX(e.target.value)}
+                                    placeholder="예: 126"
+                                />
+                            </div>
+                            <div className="pair-sep">~</div>
+                            <div className="pair-item">
+                                <label className="lbl">최대 경도</label>
+                                <input
+                                    className="inp"
+                                    value={maxX}
+                                    onChange={(e) => setMaxX(e.target.value)}
+                                    placeholder="예: 127"
+                                />
+                            </div>
+                        </div>
+
                         <button className="btn btn-primary wide" onClick={search} disabled={loading}>
                             검색하기
                         </button>
-                        {err && <div className="settings-error" style={{marginTop:8}}>{err}</div>}
+                        {err && <div className="settings-error" style={{ marginTop: 8 }}>{err}</div>}
                     </aside>
 
+                    {/* 오른쪽 결과 리스트 */}
                     <section className="add-right">
                         {loading && <div className="camera-empty">검색 중…</div>}
                         {!loading && list.length === 0 && (
@@ -215,9 +200,9 @@ function AddCameraModal({ onClose, onPick }) {
                                         onClick={() =>
                                             onPick({
                                                 name: it.name,
-                                                lat: it.lat, lon: it.lon,
-                                                roadType: tab,
-                                                // 필요시 백엔드가 요구하는 추가 필드 포함
+                                                lat: it.coordy, // 위도
+                                                lon: it.coordx, // 경도
+                                                cctvurl: it.cctvurl,
                                             })
                                         }
                                         title="클릭하면 추가됩니다"
