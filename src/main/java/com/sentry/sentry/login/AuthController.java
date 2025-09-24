@@ -30,8 +30,11 @@ public class AuthController {
     @PostMapping(value = "/login", produces = "application/json")
     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
         final String username = req.get("username");
-        // ✅ 프론트/백 어느 쪽 키든 허용
-        final String userpassword = req.getOrDefault("userpassword", req.get("userpassword"));
+        //  프론트/백 어느 쪽 키든 허용
+        final String userpassword =
+                       req.getOrDefault("password",
+                                 req.getOrDefault("pw",
+                                          req.get("userpassword")));
 
         log.info("[LOGIN] 요청 username='{}', pwd_len={}", username, userpassword == null ? null : userpassword.length());
 

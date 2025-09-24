@@ -1,8 +1,7 @@
-// Login.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "./lib/api.js";
-import { useAuth } from "./auth.jsx";           // 추가
+import { useAuth } from "./auth.jsx";
 import "./Login.css";
 import sentryLogo from "./assets/sentryLogo.jpg";
 import loginImg from "./assets/loginImg.jpg";
@@ -15,14 +14,20 @@ export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const next = location.state?.from?.pathname || "/home";
-    const { reload, me } = useAuth();             // 추가
+    const { reload, me } = useAuth();
+
+    // ✅ 로그인 페이지 진입 시 잔여 토큰/리프레시 쿠키 정리 (자동 재로그인/401 루프 방지)
+    useEffect(() => {
+        api.clearAccessToken?.();
+        fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    }, []);
 
     useEffect(() => {
         console.log("[Login] mount. next =", next);
         return () => console.log("[Login] unmount");
     }, [next]);
 
-    // 이미 로그인 상태면 /home으로 우회 (UX 향상)
+    // 로그인 상태면 홈으로
     useEffect(() => {
         if (me) {
             navigate("/home", { replace: true });
@@ -41,10 +46,10 @@ export default function Login() {
         try {
             const res = await api("/api/auth/login", {
                 method: "POST",
-                //  api()가 기본으로 Content-Type을 세팅하지 않는다면 아래 주석 해제
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, userpassword }),
-                // 쿠키 기반 세션/리프레시 쿠키를 쓰면 이 옵션도 필요
+                // 백엔드는 password/pw/userpassword 모두 허용하도록 해두어도,
+                // 프런트는 일반적으로 "password" 키를 쓰는 것을 권장합니다.
+                body: JSON.stringify({ username, password: userpassword }),
                 credentials: "include",
             });
 
@@ -76,7 +81,7 @@ export default function Login() {
             // 2) 토큰 기준으로 /api/me 재조회 완료까지 대기
             await reload();
 
-            // 3) 그 다음 보호 라우트로 이동
+            // 3) 보호 라우트로 이동
             console.log("navigate →", next);
             navigate(next, { replace: true });
         } catch (e2) {
@@ -114,7 +119,7 @@ export default function Login() {
                             placeholder="비밀번호를 입력하세요"
                             autoComplete="current-password"
                         />
-                        {err && <p className="login-error">{"아이디와 비밀번호를 다시 입력해주세요"}</p>}
+                        {err && <p className="login-error">아이디와 비밀번호를 다시 입력해주세요</p>}
                         <button type="submit" className="login-btn" disabled={loading}>
                             {loading ? "로그인 중..." : "로그인"}
                         </button>

@@ -159,6 +159,8 @@ function buildHeaders(init, useAuth = true) {
 async function api(input, init = {}) {
     const reqPath = pathFromInput(input);
     const isAuth = isAuthPath(reqPath);
+    const onLoginPage = typeof window !== "undefined" && window.location.pathname.startsWith("/login");
+
 
     // 1차 요청
     const firstHeaders = buildHeaders(init, !isAuth);
@@ -168,7 +170,7 @@ async function api(input, init = {}) {
     // 재시도 필요 없음
     const alreadyRetried = !!init.__retried;
     const allowRefresh =
-        !!accessToken || sessionStorage.getItem(ALLOW_REFRESH) === "1";
+        !onLoginPage && ( !!accessToken || sessionStorage.getItem(ALLOW_REFRESH) === "1" );
 
     if (first.status !== 401 || isAuth || alreadyRetried || !allowRefresh) {
         // 로그인 전 401은 정상이므로 조용히 반환
