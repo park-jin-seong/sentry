@@ -23,7 +23,7 @@ public class JwtUtil {
 
     public JwtUtil(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.access-ms:3600000}") long accessMs,          // 1시간
+            @Value("${jwt.access-ms:10000}") long accessMs,          // 1시간
             @Value("${jwt.refresh-ms:1209600000}") long refreshMs     // 14일
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
