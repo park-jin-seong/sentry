@@ -1,6 +1,7 @@
 package com.sentry.sentry.config;
 
 //import com.sentry.sentry.cam.RtspWebSocketHandler;
+import com.sentry.sentry.cam.RtspWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -10,7 +11,8 @@ import org.springframework.web.socket.config.annotation.*;
 @EnableWebSocket
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,WebSocketConfigurer {
+    private final RtspWebSocketHandler rtspWebSocketHandler;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -23,6 +25,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/chat")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
+    }
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // 단일 엔드포인트, 채널은 쿼리 파라미터로 전달
+        registry.addHandler(rtspWebSocketHandler, "/ws/rtsp")
+                .setAllowedOrigins("*");
     }
 //
 //@Configuration

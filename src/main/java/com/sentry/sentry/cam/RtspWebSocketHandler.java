@@ -1,52 +1,59 @@
-//package com.sentry.sentry.cam;
-//
-//
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.stereotype.Component;
-//import org.springframework.web.socket.TextMessage;
-//import org.springframework.web.socket.WebSocketSession;
-//import org.springframework.web.socket.handler.TextWebSocketHandler;
-//
-//
-//@Component
-//@RequiredArgsConstructor
-//public class RtspWebSocketHandler extends TextWebSocketHandler {
-//    private final RtspService  rtspService;
-//
-//
-//
-//    @Override
-//    public void handleTextMessage(WebSocketSession session, TextMessage message) {
-//        String channel = getChannelFromUri(session);
-//
-//        if ("start".equals(message.getPayload())) {
-//
-//            new Thread(() -> streamFrames(session, 0)).start();
-//        }
-//    }
-//
-//    private String getChannelFromUri(WebSocketSession session) {
-//        if (session.getUri() != null && session.getUri().getQuery() != null) {
-//            for (String param : session.getUri().getQuery().split("&")) {
-//                String[] kv = param.split("=");
-//                if (kv.length == 2 && kv[0].equals("channel")) {
-//                    return kv[1];
-//                }
-//            }
-//        }
-//        return "0";
-//    }
-//
-//    private void streamFrames(WebSocketSession session, int channelIndex) {
-//        while (session.isOpen()) {
-//            try {
-//                String base64Frame = rtspService.getLatestFrameBase64(channelIndex);
-//                session.sendMessage(new TextMessage(base64Frame));
-//                Thread.sleep(1); // TODO: grabber.getFrameRate() 반영 가능
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                break;
-//            }
-//        }
-//    }
-//}
+package com.sentry.sentry.cam;
+
+
+import com.sentry.sentry.entity.ServerInfo;
+import com.sentry.sentry.socket.FrameSocketThreadClass;
+import com.sentry.sentry.socket.ServerInfoService;
+import com.sentry.sentry.socket.StreamInfoDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+@Component
+@RequiredArgsConstructor
+public class RtspWebSocketHandler extends TextWebSocketHandler {
+
+    private final ServerInfoService serverInfoService;
+    private final CamService camService;
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {}
+
+    @Override
+    public void handleTextMessage(WebSocketSession session, TextMessage message) {
+        Long userId = Long.parseLong(message.getPayload());
+        ServerInfo serverInfo = serverInfoService.getServerInfo("Middle");
+        List<Long> camIdList = camService.getCam(userId);
+        String serverIp = serverInfo.getServerIp();
+        int serverPort = serverInfo.getServerPort();
+
+        FrameSocketThreadClass frameSocketThreadClass = new FrameSocketThreadClass(serverIp, serverPort, userId, camIdList);
+        new Thread(() -> {
+            try {
+                streamFrames(session, frameSocketThreadClass);
+            } catch (Exception e) {
+                throw new RuntimeException("망");
+            }
+        }).start();
+    }
+
+    private void streamFrames(WebSocketSession session, FrameSocketThreadClass  frameSocketThreadClass){
+        System.out.println(session.isOpen());
+        frameSocketThreadClass.Start();
+        while (session.isOpen()) {
+            try {
+                String base64Frame = frameSocketThreadClass.getLatestFrameBase64();
+                session.sendMessage(new TextMessage(base64Frame));
+                Thread.sleep(1); // TODO: grabber.getFrameRate() 반영 가능
+            } catch (Exception e) {
+                e.printStackTrace();
+                break;
+            }
+        }
+    }
+}
