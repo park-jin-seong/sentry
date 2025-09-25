@@ -3,17 +3,21 @@ package com.sentry.sentry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
-
 @Entity
-@Table(name = "cameraassign", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"userId", "assignedcameraId"}, name = "uq_user_camera")
-})
-@Builder
-@Data
+@Table(
+        name = "cameraassign",
+        catalog = "sentry_client",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"userId", "assignedcameraId"},
+                name = "uq_user_camera"
+        )
+)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CameraAssign implements Serializable {
+@Builder
+public class CameraAssign {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,7 +26,7 @@ public class CameraAssign implements Serializable {
     @Column(name = "userId", nullable = false)
     private Long userId;
 
+    // ★ DB에 있는 컬럼명 그대로
     @Column(name = "assignedcameraId", nullable = false)
     private Long assignedCameraId;
-
 }

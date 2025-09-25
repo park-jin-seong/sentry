@@ -7,7 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "camerainfos", catalog = "sentry_server")
+@Table(
+        name = "cameraassign",
+        catalog = "sentry_client",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"userId","assignedcameraId"},
+                name = "uq_user_camera"
+        )
+)
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,15 +32,17 @@ public class CameraInfos {
     private String cctvUrl;
 
     @Column(name = "coordx", nullable = false)
-    private float coordx;
+    private double coordx;
 
     @Column(name = "coordy", nullable = false)
-    private float coordy;
+    private double coordy;
 
     @Column(name = "isAnalisis", nullable = false, columnDefinition = "TINYINT(1)")
     private boolean isAnalisis;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "analysisServerId", foreignKey = @ForeignKey(name = "fk_analysisServerId"))
+    @JoinColumn(name = "analysisServerId",
+            referencedColumnName = "serverId",
+            foreignKey = @ForeignKey(name = "fk_analysisServerId"))
     private ServerInfo analysisServer;
 }
