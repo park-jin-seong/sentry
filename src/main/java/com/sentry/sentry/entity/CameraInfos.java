@@ -19,10 +19,10 @@ public class CameraInfos {
     private String cctvUrl;
 
     @Column(name = "coordx", nullable = false)
-    private float coordx;
+    private double coordx;
 
     @Column(name = "coordy", nullable = false)
-    private float coordy;
+    private double coordy;
 
     @Column(name = "isAnalisis", nullable = false, columnDefinition = "TINYINT(1)")
     private boolean isAnalisis;
