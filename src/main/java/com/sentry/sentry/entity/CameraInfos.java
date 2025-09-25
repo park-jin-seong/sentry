@@ -6,15 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// com.sentry.sentry.entity.CameraInfos
 @Entity
-@Table(
-        name = "cameraassign",
-        catalog = "sentry_client",
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"userId","assignedcameraId"},
-                name = "uq_user_camera"
-        )
-)
+@Table(name = "camerainfos", catalog = "sentry_server") // ★ 여기!
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,6 +17,7 @@ public class CameraInfos {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cameraId")
     private Long cameraId;
 
     @Column(name = "cameraName", nullable = false, length = 45)

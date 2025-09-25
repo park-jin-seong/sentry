@@ -3,6 +3,7 @@ package com.sentry.sentry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+// com.sentry.sentry.entity.CameraAssign
 @Entity
 @Table(
         name = "cameraassign",
@@ -12,11 +13,7 @@ import lombok.*;
                 name = "uq_user_camera"
         )
 )
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CameraAssign {
 
     @Id
@@ -26,7 +23,6 @@ public class CameraAssign {
     @Column(name = "userId", nullable = false)
     private Long userId;
 
-    // ★ DB에 있는 컬럼명 그대로
     @Column(name = "assignedcameraId", nullable = false)
     private Long assignedCameraId;
 }
