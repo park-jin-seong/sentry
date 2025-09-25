@@ -7,13 +7,43 @@ export default function CameraSettings() {
     const [items, setItems] = useState([]);
     const [showAdd, setShowAdd] = useState(false);
 
-    const addBySelection = (selected) => {
-        const id = selected.cctvurl ?? `tmp-${Date.now()}`;
-        setItems((prev) => [
-            { id, name: selected.name ?? selected.cctvname, ...selected },
-            ...prev,
-        ]);
-        setShowAdd(false);
+    /** CCTV 선택 시 서버에 저장 요청 */
+    const addBySelection = async (selected) => {
+        try {
+            // TODO: 로그인한 사용자 ID 가져오기 (여기선 예시로 1)
+            const userId = 1;
+
+            const r = await api(`/api/camera/assign?userId=${userId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    cctvname: selected.name,
+                    cctvurl: selected.cctvurl,
+                    coordx: selected.lon,
+                    coordy: selected.lat,
+                    cctvformat: selected.cctvformat,
+                }),
+                credentials: "include",
+            });
+
+            if (!r.ok) {
+                const ejson = await r.json().catch(() => null);
+                throw new Error(ejson?.message || "카메라 저장 실패");
+            }
+
+            const saved = await r.json(); // CameraAssign 엔티티 응답
+            setItems((prev) => [
+                {
+                    id: saved.id ?? saved.cctvurl, // DB PK 없으면 URL로 fallback
+                    name: saved.cctvname ?? selected.name,
+                    ...saved,
+                },
+                ...prev,
+            ]);
+            setShowAdd(false);
+        } catch (e) {
+            alert(e.message);
+        }
     };
 
     const onDelete = (id) =>
@@ -50,9 +80,9 @@ export default function CameraSettings() {
                         {items.map((it) => (
                             <div className="camera-row" key={it.id}>
                                 <div className="col-name">
-                  <span className="camera-name">
-                    {it.name ?? it.cctvname}
-                  </span>
+                                    <span className="camera-name">
+                                        {it.name ?? it.cctvname}
+                                    </span>
                                 </div>
                                 <div className="col-actions">
                                     <button
@@ -98,7 +128,7 @@ function AddCameraModal({ onClose, onPick }) {
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
 
-    // 숫자 보정(문자열 입력이라도 안전하게 변환)
+    // 숫자 보정
     const toNum = (v, fallback = 0) => {
         const n = Number(v);
         return Number.isFinite(n) ? n : fallback;
@@ -110,11 +140,8 @@ function AddCameraModal({ onClose, onPick }) {
         setList([]);
         try {
             const qs = new URLSearchParams({
-                // 반드시 포함: 고속/국도 구분
-                type: roadType, // ex | its
-                // cctvType은 화면에 보이지 않지만 1로 고정(실시간)
+                type: roadType,
                 cctvType: "1",
-                // 좌표는 문자열이어도 백엔드에서 double로 받으므로 그대로 전달
                 minX: String(minX),
                 maxX: String(maxX),
                 minY: String(minY),
@@ -254,11 +281,9 @@ function AddCameraModal({ onClose, onPick }) {
                                         onClick={() =>
                                             onPick({
                                                 name: it.name,
-                                                // 위/경도는 숫자로 보정해서 넘겨두면 이후 계산에 안전
                                                 lat: toNum(it.coordy, 0),
                                                 lon: toNum(it.coordx, 0),
                                                 cctvurl: it.cctvurl,
-                                                // 필요시 포맷도 전달
                                                 cctvformat: it.cctvformat,
                                             })
                                         }
