@@ -2,67 +2,97 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
 
+/** 실제 로그인 유저 ID로 교체하세요 */
+const USER_ID = 1;
+
 /** 메인: 카메라 설정 */
 export default function CameraSettings() {
     const [items, setItems] = useState([]);
     const [showAdd, setShowAdd] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    // TODO: 실제 로그인 유저 ID로 대체
-    const userId = 1;
-
-    //  서버에서 내 카메라 목록 불러오기
+    /** 서버 목록 로드 */
     const loadAssigned = async () => {
-        const r = await api(`/api/camera/assigned?userId=${userId}`);
-        if (!r.ok) return; // 에러 처리 원하면 alert 등 추가
-        const rows = await r.json(); // ← CameraInfosDTO[] 가정
-        // 프론트에서 쓰기 편한 형태로 매핑
-        setItems(
-            rows.map((d) => ({
-                id: d.cameraId,
-                name: d.cameraName,
-                cctvurl: d.cctvUrl,
-                coordx: d.coordx,
-                coordy: d.coordy,
-            }))
-        );
+        setLoading(true);
+        try {
+            const r = await api(`/api/camera/assigned?userId=${USER_ID}`);
+            if (!r.ok) throw new Error("목록 조회 실패");
+            const rows = await r.json();
+            setItems(
+                rows.map((d) => ({
+                    id: d.cameraId,
+                    name: d.cameraName,
+                    cctvurl: d.cctvUrl,
+                    coordx: d.coordx,
+                    coordy: d.coordy,
+                    isAnalisis: d.isAnalisis,
+                }))
+            );
+        } catch (e) {
+            console.warn(e);
+            setItems([]);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    //  마운트 시 1회 로드
     useEffect(() => {
         loadAssigned();
     }, []);
 
-    /** CCTV 선택 시 서버에 저장 요청 */
+    /** 추가(ITS에서 선택 → 서버 저장/할당) */
     const addBySelection = async (selected) => {
         try {
-            const r = await api(`/api/camera/assign?userId=${userId}`, {
+            const r = await api(`/api/camera/assign?userId=${USER_ID}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     cctvname: selected.name,
                     cctvurl: selected.cctvurl,
-                    coordx: selected.lon,
-                    coordy: selected.lat,
+                    coordx: selected.lon, // 경도 → coordx
+                    coordy: selected.lat, // 위도 → coordy
                     cctvformat: selected.cctvformat,
                 }),
-                credentials: "include",
             });
-
             if (!r.ok) {
                 const ejson = await r.json().catch(() => null);
                 throw new Error(ejson?.message || "카메라 저장 실패");
             }
-
-            //  저장 성공 후 서버 목록을 다시 가져와 동기화
-            await loadAssigned();
+            await loadAssigned(); // 서버 기준 동기화
             setShowAdd(false);
         } catch (e) {
-            alert(e.message);
+            alert(e.message || "추가 실패");
         }
     };
 
-    const onDelete = (id) =>
-        setItems((prev) => prev.filter((it) => it.id !== id));
+    /** 수정(간단히 이름만) */
+    const onEdit = async (it) => {
+        const name = window.prompt("카메라명 수정", it.name || "");
+        if (name == null) return;
+        try {
+            const r = await api(`/api/camera/${it.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cameraName: name }),
+            });
+            if (!r.ok) throw new Error("수정 실패");
+            await loadAssigned();
+        } catch (e) {
+            alert(e.message || "수정 실패");
+        }
+    };
+
+    /** ✅ 삭제 = 항상 하드 삭제(매핑 지우고 camerainfos까지 삭제) */
+    const onDelete = async (cameraId) => {
+        if (!window.confirm("정말 삭제할까요?\n(DB에서 완전히 삭제됩니다)")) return;
+        try {
+            const r = await api(`/api/camera/${cameraId}`, { method: "DELETE" });
+            if (!r.ok) throw new Error("삭제 실패");
+            await loadAssigned();
+        } catch (e) {
+            alert(e.message || "삭제 실패");
+        }
+    };
 
     return (
         <div className="camera-settings">
@@ -72,9 +102,7 @@ export default function CameraSettings() {
                 <div className="settings-block-head">
                     <div>
                         <div className="settings-block-title">카메라 목록</div>
-                        <div className="settings-block-desc">
-                            ITS에서 검색해 추가할 수 있습니다.
-                        </div>
+                        <div className="settings-block-desc">ITS에서 검색해 추가할 수 있습니다.</div>
                     </div>
                     <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
                         추가
@@ -87,42 +115,40 @@ export default function CameraSettings() {
                         <div className="col-actions" />
                     </div>
                     <div className="camera-body">
-                        {items.length === 0 && (
-                            <div className="camera-empty">
-                                카메라가 없습니다. 오른쪽 위 “추가”로 검색하세요.
-                            </div>
+                        {loading && <div className="camera-empty">불러오는 중…</div>}
+
+                        {!loading && items.length === 0 && (
+                            <div className="camera-empty">카메라가 없습니다. “추가” 버튼으로 검색해 보세요.</div>
                         )}
-                        {items.map((it) => (
-                            <div className="camera-row" key={it.id}>
-                                <div className="col-name">
-                                    <span className="camera-name">{it.name}</span>
+
+                        {!loading &&
+                            items.map((it) => (
+                                <div className="camera-row" key={it.id}>
+                                    <div className="col-name">
+                                        <span className="camera-name">{it.name}</span>
+                                    </div>
+                                    <div className="col-actions" style={{ display: "flex", gap: 8 }}>
+                                        <button className="btn" onClick={() => onEdit(it)}>
+                                            수정
+                                        </button>
+                                        <button className="btn btn-danger" onClick={() => onDelete(it.id)}>
+                                            삭제
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="col-actions">
-                                    <button
-                                        className="btn btn-danger"
-                                        onClick={() => onDelete(it.id)}
-                                    >
-                                        삭제
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </div>
             </div>
 
-            {showAdd && (
-                <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />
-            )}
+            {showAdd && <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />}
         </div>
     );
 }
 
 /** 추가 모달: 고속/국도만 구분해서 검색 */
 function AddCameraModal({ onClose, onPick }) {
-    // 도로 타입(ex=고속, its=국도)만 전환
     const [roadType, setRoadType] = useState("its"); // 기본 국도
-    // 좌표 입력값
     const [minX, setMinX] = useState("126");
     const [maxX, setMaxX] = useState("127");
     const [minY, setMinY] = useState("34");
@@ -132,7 +158,7 @@ function AddCameraModal({ onClose, onPick }) {
     const [list, setList] = useState([]);
     const [err, setErr] = useState("");
 
-    // ESC로 닫기
+    // ESC 닫기
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === "Escape") onClose();
@@ -153,7 +179,7 @@ function AddCameraModal({ onClose, onPick }) {
         setList([]);
         try {
             const qs = new URLSearchParams({
-                type: roadType,
+                type: roadType, // ex | its
                 cctvType: "1",
                 minX: String(minX),
                 maxX: String(maxX),
@@ -161,10 +187,10 @@ function AddCameraModal({ onClose, onPick }) {
                 maxY: String(maxY),
             }).toString();
 
-            const r = await api(`/api/its/cctv?${qs}`, { credentials: "include" });
+            const r = await api(`/api/its/cctv?${qs}`);
             if (!r.ok) {
                 const ejson = await r.json().catch(() => null);
-                throw new Error(ejson?.message || "검색에 실패했어요.");
+                throw new Error(ejson?.message || "검색 실패");
             }
             const json = await r.json();
             const rows = (json?.response?.data ?? []).map((d, i) => ({
@@ -183,7 +209,6 @@ function AddCameraModal({ onClose, onPick }) {
         }
     };
 
-    // 외부 영역 클릭으로 닫기
     const onBackdropMouseDown = () => onClose();
     const stop = (e) => e.stopPropagation();
 
@@ -282,9 +307,7 @@ function AddCameraModal({ onClose, onPick }) {
                     {/* 오른쪽: 결과 리스트 */}
                     <section className="add-right">
                         {loading && <div className="camera-empty">검색 중…</div>}
-                        {!loading && list.length === 0 && (
-                            <div className="camera-empty">검색 결과가 없습니다.</div>
-                        )}
+                        {!loading && list.length === 0 && <div className="camera-empty">검색 결과가 없습니다.</div>}
                         {!loading && list.length > 0 && (
                             <ul className="result-list">
                                 {list.map((it, i) => (
@@ -294,8 +317,8 @@ function AddCameraModal({ onClose, onPick }) {
                                         onClick={() =>
                                             onPick({
                                                 name: it.name,
-                                                lat: toNum(it.coordy, 0),
-                                                lon: toNum(it.coordx, 0),
+                                                lat: toNum(it.coordy, 0), // 위도
+                                                lon: toNum(it.coordx, 0), // 경도
                                                 cctvurl: it.cctvurl,
                                                 cctvformat: it.cctvformat,
                                             })
