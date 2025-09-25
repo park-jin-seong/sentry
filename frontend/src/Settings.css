@@ -115,6 +115,101 @@
 
 
 /*카메라 설정 팝업 css*/
+/* ===== 카메라 설정 목록 ===== */
+.camera-table{
+    background:#3D434D;            /* 카드 배경 */
+    border-radius:18px;
+    padding:16px;
+    display:flex; flex-direction:column;
+    width: 700px;
+}
+
+.settings-block-title{
+    font-size: 20px;
+    font-weight: bold;
+    margin: 10px;
+}
+.settings-block-desc{
+    margin: 10px;
+    color: #B2B2B2;
+}
+
+/* 상단 헤더 라인 + 우측 '추가' 버튼(현재 마크업 기준) */
+.camera-row-head{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 8px 12px;
+    border-bottom:1px solid rgba(255,255,255,.18);
+    margin-bottom:4px;
+}
+.camera-row-head .col-name{
+    font-weight:800;
+    letter-spacing:.03em;
+    font-size: 18px;
+}
+.camera-row-head .col-actions{
+    margin-left:auto;
+}
+
+/* 만약 headbar 버전(카메라명/추가) 마크업을 쓰는 경우도 지원 */
+.camera-headbar{
+    display:flex; align-items:center;
+    padding:10px 8px 12px;
+    border-bottom:1px solid rgba(255,255,255,.18);
+    margin-bottom:6px;
+}
+.camera-headbar .head-title{
+    font-weight:800; letter-spacing:.02em;
+}
+.camera-headbar .head-add{
+    margin-left:auto;
+}
+
+/* 스크롤 영역 */
+.camera-body{
+    max-height:400px;              /* 필요하면 조절 */
+    overflow:auto;
+    padding-right:6px;
+}
+.camera-body::-webkit-scrollbar{ width:8px; }
+.camera-body::-webkit-scrollbar-thumb{
+    background:#7B7B7B; border-radius:8px;
+}
+.camera-body::-webkit-scrollbar-track{ background:#3D434D; }
+
+/* 행 */
+.camera-row{
+    display:flex; align-items:center;
+    min-height:56px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    padding:8px 0;
+}
+.camera-row:last-child{ border-bottom:0; }
+
+.col-name{ flex:1; }
+.camera-name{ font-weight:400; }
+
+/* 버튼 묶음 */
+.col-actions{
+    display:flex; gap:8px;
+}
+
+/* 버튼 톤(회색 캡슐) */
+.btn{
+    height:36px; padding:0 14px;
+    border:none; border-radius:10px;
+    background:#6B737E; color:#fff; font-weight:700;
+    cursor:pointer;
+}
+.btn:hover{ filter:brightness(1.06); }
+.btn:active{ transform:translateY(1px); }
+
+/* 파란 '추가' 버튼 */
+.btn.btn-primary{ background:#207590; }
+
+/* 삭제도 회색으로(시안처럼) */
+.btn.btn-danger{ background:#6B737E; }
+
+
 
 /* ---- Add Camera Modal ---- */
 .modal-backdrop{
@@ -205,7 +300,7 @@
 .modal-sheet {
     background: #484E58;
     color: #fff;
-    width: 640px;
+    width: 800px;
     max-width: calc(100vw - 40px);
     border-radius: 24px;
     padding: 20px 20px 16px;
@@ -246,8 +341,6 @@
 .cam-sublabel { font-size: 12px; opacity: .85; margin-bottom: 6px; }
 
 .cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.cam-field {}
-
 .cam-inp {
     width: 100%;
     background: #3D434D;

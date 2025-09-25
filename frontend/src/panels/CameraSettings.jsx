@@ -107,7 +107,7 @@ export default function CameraSettings() {
             alert("로그인 후 사용하세요.");
             return;
         }
-        if (!window.confirm("정말 삭제할까요?\n(DB에서 완전히 삭제됩니다)")) return;
+        if (!window.confirm("정말 삭제할까요?")) return;
         try {
             const r = await api(`/api/camera/${cameraId}`, { method: "DELETE" });
             if (!r.ok) throw new Error("삭제 실패");
@@ -119,22 +119,22 @@ export default function CameraSettings() {
 
     return (
         <div className="camera-settings">
-            <h2 className="settings-subtitle">카메라 설정</h2>
 
             <div className="settings-block">
                 <div className="settings-block-head">
                     <div>
                         <div className="settings-block-title">카메라 목록</div>
-                        <div className="settings-block-desc">ITS에서 검색해 추가할 수 있습니다.</div>
+                        <div className="settings-block-desc">카메라 추가와 수정 및 삭제가 가능합니다.</div>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-                        추가
-                    </button>
+
                 </div>
 
                 <div className="camera-table">
                     <div className="camera-row camera-row-head">
                         <div className="col-name">카메라명</div>
+                        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                            추가
+                        </button>
                         <div className="col-actions" />
                     </div>
                     <div className="camera-body">
