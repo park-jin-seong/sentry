@@ -7,12 +7,34 @@ export default function CameraSettings() {
     const [items, setItems] = useState([]);
     const [showAdd, setShowAdd] = useState(false);
 
+    // TODO: 실제 로그인 유저 ID로 대체
+    const userId = 1;
+
+    //  서버에서 내 카메라 목록 불러오기
+    const loadAssigned = async () => {
+        const r = await api(`/api/camera/assigned?userId=${userId}`);
+        if (!r.ok) return; // 에러 처리 원하면 alert 등 추가
+        const rows = await r.json(); // ← CameraInfosDTO[] 가정
+        // 프론트에서 쓰기 편한 형태로 매핑
+        setItems(
+            rows.map((d) => ({
+                id: d.cameraId,
+                name: d.cameraName,
+                cctvurl: d.cctvUrl,
+                coordx: d.coordx,
+                coordy: d.coordy,
+            }))
+        );
+    };
+
+    //  마운트 시 1회 로드
+    useEffect(() => {
+        loadAssigned();
+    }, []);
+
     /** CCTV 선택 시 서버에 저장 요청 */
     const addBySelection = async (selected) => {
         try {
-            // TODO: 로그인한 사용자 ID 가져오기 (여기선 예시로 1)
-            const userId = 1;
-
             const r = await api(`/api/camera/assign?userId=${userId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -31,15 +53,8 @@ export default function CameraSettings() {
                 throw new Error(ejson?.message || "카메라 저장 실패");
             }
 
-            const saved = await r.json(); // CameraAssign 엔티티 응답
-            setItems((prev) => [
-                {
-                    id: saved.id ?? saved.cctvurl, // DB PK 없으면 URL로 fallback
-                    name: saved.cctvname ?? selected.name,
-                    ...saved,
-                },
-                ...prev,
-            ]);
+            //  저장 성공 후 서버 목록을 다시 가져와 동기화
+            await loadAssigned();
             setShowAdd(false);
         } catch (e) {
             alert(e.message);
@@ -80,9 +95,7 @@ export default function CameraSettings() {
                         {items.map((it) => (
                             <div className="camera-row" key={it.id}>
                                 <div className="col-name">
-                                    <span className="camera-name">
-                                        {it.name ?? it.cctvname}
-                                    </span>
+                                    <span className="camera-name">{it.name}</span>
                                 </div>
                                 <div className="col-actions">
                                     <button
