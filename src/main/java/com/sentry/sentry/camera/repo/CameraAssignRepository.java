@@ -16,7 +16,7 @@ public interface CameraAssignRepository extends JpaRepository<CameraAssign, Long
         SELECT i.cameraId, i.cameraName, i.cctvUrl, i.coordx, i.coordy, a.id AS assignId
           FROM sentry_client.cameraassign a
           JOIN sentry_server.camerainfos i
-            ON i.cameraId = a.assignedcameraId
+                ON i.cameraId = a.assignedcameraId
          WHERE a.userId = :userId
          ORDER BY i.cameraName
         """, nativeQuery = true)

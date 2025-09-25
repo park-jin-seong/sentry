@@ -1,27 +1,34 @@
 package com.sentry.sentry.its;
 
+import com.sentry.sentry.its.ItsCctvService;
 import com.sentry.sentry.its.dto.ItsCctvResponse;
-import org.springframework.web.bind.annotation.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/its/cctv")
-public class ItsCctvController {
+@RequiredArgsConstructor
+@RequestMapping("/api/its")
+class ItsCctvController {
 
     private final ItsCctvService service;
 
-    public ItsCctvController(ItsCctvService service) {
-        this.service = service;
-    }
-
-    // 예: GET /api/its/cctv?cctvType=1&minX=126&maxX=127&minY=34&maxY=35
-    @GetMapping
-    public ItsCctvResponse search(
-            @RequestParam int cctvType,
+    @GetMapping("/cctv")
+    public ResponseEntity<ItsCctvResponse> search(
+            @RequestParam(defaultValue = "its") String type,      // ex | its
+            @RequestParam(defaultValue = "1") int cctvType,
             @RequestParam double minX,
             @RequestParam double maxX,
             @RequestParam double minY,
             @RequestParam double maxY
     ) {
-        return service.search(cctvType, minX, maxX, minY, maxY);
+        return ResponseEntity.ok(
+                service.search(type, cctvType, minX, maxX, minY, maxY)
+        );
     }
 }

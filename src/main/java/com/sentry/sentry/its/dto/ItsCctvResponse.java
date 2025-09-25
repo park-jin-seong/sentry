@@ -4,9 +4,9 @@ import java.util.List;
 
 public record ItsCctvResponse(Response response) {
     public record Response(
-            Integer coordtype,
+            String coordtype,
             List<CctvItem> data,
-            Integer datacount
+            String datacount
     ) {}
 
     public record CctvItem(

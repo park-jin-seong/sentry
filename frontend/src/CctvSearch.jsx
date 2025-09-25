@@ -2,6 +2,7 @@ import { useState } from "react";
 import { searchCctv } from "./lib/its";
 
 export default function CctvSearch() {
+    const [type, setType] = useState("its");   // ← 추가
     const [cctvType, setCctvType] = useState(1);
     const [minX, setMinX] = useState(126);
     const [maxX, setMaxX] = useState(127);
@@ -14,7 +15,7 @@ export default function CctvSearch() {
     const onSearch = async () => {
         setLoading(true); setErr("");
         try {
-            const json = await searchCctv({ cctvType, minX, maxX, minY, maxY });
+            const json = await searchCctv({ type, cctvType, minX, maxX, minY, maxY }); // ← type 전달
             setData(json?.response?.data ?? []);
         } catch (e) {
             setErr(e.message ?? "오류");
@@ -26,7 +27,14 @@ export default function CctvSearch() {
     return (
         <div style={{padding:16}}>
             <h2>ITS CCTV 검색</h2>
-            <div style={{display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:8, maxWidth:800}}>
+
+            <div style={{display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:8, maxWidth:960}}>
+                <label>type
+                    <select value={type} onChange={e=>setType(e.target.value)}>
+                        <option value="its">its (국도)</option>
+                        <option value="ex">ex (고속도로)</option>
+                    </select>
+                </label>
                 <label>cctvType
                     <input value={cctvType} onChange={e=>setCctvType(Number(e.target.value)||0)} />
                 </label>
@@ -43,6 +51,7 @@ export default function CctvSearch() {
                     <input value={maxY} onChange={e=>setMaxY(Number(e.target.value))} />
                 </label>
             </div>
+
             <button style={{marginTop:12}} onClick={onSearch} disabled={loading}>
                 {loading ? "검색 중…" : "검색"}
             </button>
