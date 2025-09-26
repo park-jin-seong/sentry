@@ -9,8 +9,8 @@ public class CameraInfosDTO {
     private Long cameraId;
     private String cameraName;
     private String cctvUrl;
-    private float coordx;
-    private float coordy;
+    private double coordx;
+    private double coordy;
     private boolean isAnalisis;
     private Long analysisServerId;
 
