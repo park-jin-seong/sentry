@@ -7,6 +7,7 @@ import SettingsPage from "./SettingsPage.jsx";
 import Login from "./Login.jsx";
 import Chat from "./Chat.jsx";
 import { loadAndApplyChatTheme } from "./lib/chatTheme.js";
+import Search from "./Search.jsx";
 
 
 function InitCssVars() {
@@ -34,6 +35,7 @@ export default function App() {
 
                 <Route element={<RequireAuth />}>
                     <Route path="/home" element={<Home />} />
+                    <Route path="/search" element={<Search />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/chat" element={<Chat />} /> {/* 필요하면 보호된 채팅 라우트 */}
                 </Route>

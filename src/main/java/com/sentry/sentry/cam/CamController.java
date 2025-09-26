@@ -38,12 +38,25 @@ public class CamController {
         return RTSPURL;
     }
 
-    @GetMapping("/list/{userId}")
-    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable  Long userId) {
+    @GetMapping("/list-byUserId")
+    public List<CameraInfosDTO> getAllCameraInfos(@RequestParam Long userId) {
 
         List<Long> camIdList = camService.getCam(userId);
 
         List<CameraInfos> allCameraInfos = camService.getCameraInfos(camIdList);
+        List<CameraInfosDTO> allCameraInfosDTO = allCameraInfos.stream()
+                .map(CameraInfosDTO::new)
+                .collect(Collectors.toList());
+
+        System.out.println("allCameraInfosDTO = " + allCameraInfosDTO);
+        return allCameraInfosDTO;
+    }
+
+    @GetMapping("/list-byName")
+    public List<CameraInfosDTO> getCameraInfosByName(@RequestParam(required = false) String cameraName) {
+        List<CameraInfos> allCameraInfos = camService.getCameraInfosByName(cameraName);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>" + cameraName);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>" + allCameraInfos);
         List<CameraInfosDTO> allCameraInfosDTO = allCameraInfos.stream()
                 .map(CameraInfosDTO::new)
                 .collect(Collectors.toList());
