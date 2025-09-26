@@ -81,7 +81,7 @@ const Home = () => {
     const getCamList = async () => {
         if (!me?.id) return;
         try {
-            const response = await axios.get(`/api/cam/list/${me.id}`);
+            const response = await axios.get(`/api/cam/list-byUserId?userId=${me.id}`);
             setCamList(response.data);
             console.log("카메라 목록:", response.data);
         } catch (err) {
@@ -102,7 +102,16 @@ const Home = () => {
                 </div>
 
                 <nav className="nav-menu">
-                    <a href="#" className="nav-item">검색</a>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/search");
+                        }}
+                    >
+                        검색
+                    </a>
                     <a href="#" className="nav-item">도움말</a>
                     <a
                         href="#"

@@ -20,4 +20,8 @@ public class CamService {
     public List<CameraInfos> getCameraInfos(List<Long> cameraIds) {
         return cameraInfosRepository.findByCameraIdIn(cameraIds);
     }
+
+    public List<CameraInfos> getCameraInfosByName(String cameraName) {
+        return cameraInfosRepository.findByCameraNameContaining(cameraName);
+    }
 }
