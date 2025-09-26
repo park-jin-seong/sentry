@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> {
@@ -20,4 +21,5 @@ public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> 
     List<CameraInfos> findCameraInfosByCameraName(String cameraName);
 
     List<CameraInfos> findByCameraNameContaining(String cameraName);
+    Optional<CameraInfos> findByCctvUrl(String cctvUrl);
 }

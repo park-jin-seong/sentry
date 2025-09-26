@@ -1,14 +1,20 @@
 package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
-import java.io.Serializable;
-
+// com.sentry.sentry.entity.CameraAssign
 @Entity
-@Table(name = "cameraassign", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"userId", "assignedcameraId"}, name = "uq_user_camera")
-})
-public class CameraAssign implements Serializable {
+@Table(
+        name = "cameraassign",
+        catalog = "sentry_client",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"userId", "assignedcameraId"},
+                name = "uq_user_camera"
+        )
+)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class CameraAssign {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,5 +25,4 @@ public class CameraAssign implements Serializable {
 
     @Column(name = "assignedcameraId", nullable = false)
     private Long assignedCameraId;
-
 }
