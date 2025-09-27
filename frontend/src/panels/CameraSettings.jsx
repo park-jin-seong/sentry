@@ -1,15 +1,13 @@
 // src/panels/CameraSettings.jsx
 import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
-
-// 토글 이미지
 import toggleOn from "../assets/toggleon.png";
 import toggleOff from "../assets/toggleoff.png";
+import { useAuth } from "../auth.jsx";
 
-// 실제 로그인 사용자 ID로 교체
-const USER_ID = 1;
 
-/** 숫자 보정 */
+
+/** 안전 숫자 변환 */
 const toNum = (v, fb = 0) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : fb;
@@ -18,25 +16,41 @@ const toNum = (v, fb = 0) => {
 export default function CameraSettings() {
     const [items, setItems] = useState([]);
     const [showAdd, setShowAdd] = useState(false);
-    const [loading, setLoading] = useState(false); // ← 초기엔 불러오지 않음
+    const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(null);
+    const [infoTarget, setInfoTarget] = useState(null);
+    const { me } = useAuth();
+    const USER_ID = me?.id ?? null;
 
-    /** 서버 목록 */
-    const loadAssigned = async () => {
+    /** 전체 목록 로드 */
+    const loadAll = async () => {
         setLoading(true);
         try {
-            const r = await api(`/api/camera/assigned?userId=${USER_ID}`);
+            const r = await api(`/api/cam/all`);
             if (!r.ok) throw new Error("목록 조회 실패");
             const rows = await r.json();
+
             setItems(
-                rows.map((d) => ({
-                    id: d.cameraId,
-                    name: d.cameraName,
-                    cctvurl: d.cctvUrl,
-                    coordx: d.coordx,
-                    coordy: d.coordy,
-                    isAnalisis: !!d.analisis || !!d.isAnalisis,
-                }))
+                rows.map((d) => {
+                    const ownerUserId = d.ownerUserId ?? null;
+                    // 서버가 isOwner를 내려주면 그대로, 아니면 ownerUserId 비교로 결정
+                    const isOwner =
+                        typeof d.isOwner === "boolean"
+                            ? d.isOwner
+                            : ownerUserId === USER_ID;
+
+                    return {
+                        id: d.cameraId,
+                        name: d.cameraName,
+                        cctvurl: d.cctvUrl,
+                        coordx: d.coordx,
+                        coordy: d.coordy,
+                        isAnalisis: !!d.isAnalisis,
+                        isOwner,
+                        ownerUserId,
+                        ownerName: d.ownerName ?? null,
+                    };
+                })
             );
         } catch (e) {
             console.warn(e);
@@ -46,72 +60,64 @@ export default function CameraSettings() {
         }
     };
 
-    // ✅ 로그인(토큰) 생긴 뒤에만 서버 호출
+    // 로그인(토큰) 생기면 호출
     useEffect(() => {
-        // 세션 복구(있으면 access만 갱신, 없으면 조용히 무시)
         api.trySessionRestoreOnce?.();
 
-        // 토큰 바뀔 때 반응
         const off = api.onAccessTokenChange((t) => {
-            if (t) {
-                loadAssigned();
-            } else {
-                // 로그아웃 등 → 목록 비우기
-                setItems([]);
-            }
+            if (t) loadAll();
+            else setItems([]);
         });
 
-        // 이미 토큰이 있다면 즉시 로드
-        if (api.peekAccessToken()) {
-            loadAssigned();
-        }
+        if (api.peekAccessToken()) loadAll();
 
         return off;
     }, []);
 
-    /** ITS에서 추가 (토큰 없으면 로그인 요구) */
+    /** ITS 검색에서 선택 → 추가 (백엔드: POST /api/cam/add) */
     const addBySelection = async (selected) => {
         if (!api.peekAccessToken()) {
             alert("로그인 후 사용하세요.");
             return;
         }
         try {
-            const r = await api(`/api/camera/assign?userId=${USER_ID}`, {
+            const r = await api(`/api/cam/add`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    cctvname: selected.name,
-                    cctvurl: selected.cctvurl,
-                    coordx: selected.lon,
-                    coordy: selected.lat,
-                    cctvformat: selected.cctvformat,
+                    cameraName: selected.name,
+                    cctvUrl: selected.cctvurl,
+                    coordx: toNum(selected.lon, 0),
+                    coordy: toNum(selected.lat, 0),
+                    isAnalisis: false,
+                    ownerUserId: USER_ID,
                 }),
             });
             if (!r.ok) {
                 const ejson = await r.json().catch(() => null);
                 throw new Error(ejson?.message || "카메라 저장 실패");
             }
-            await loadAssigned();
+            await loadAll();
             setShowAdd(false);
         } catch (e) {
             alert(e.message || "추가 실패");
         }
     };
 
-    /** 수정 모달 띄우기 */
+    /** 수정 누르면 모달 */
     const onEdit = (it) => setEditing(it);
 
-    /** 하드 삭제(매핑+마스터까지 전부) */
+    /** 삭제(내 소유만) — 필요 시 엔드포인트 경로만 교체 */
     const onDelete = async (cameraId) => {
         if (!api.peekAccessToken()) {
             alert("로그인 후 사용하세요.");
             return;
         }
-        if (!window.confirm("정말 삭제할까요?")) return;
+        if (!window.confirm("정말 삭제할까요? (모든 사용자 매핑 포함 하드 삭제)")) return;
         try {
-            const r = await api(`/api/camera/${cameraId}`, { method: "DELETE" });
+            const r = await api(`/api/cam/${cameraId}`, { method: "DELETE" });
             if (!r.ok) throw new Error("삭제 실패");
-            await loadAssigned();
+            await loadAll();
         } catch (e) {
             alert(e.message || "삭제 실패");
         }
@@ -119,42 +125,64 @@ export default function CameraSettings() {
 
     return (
         <div className="camera-settings">
-
             <div className="settings-block">
                 <div className="settings-block-head">
                     <div>
                         <div className="settings-block-title">카메라 목록</div>
-                        <div className="settings-block-desc">카메라 추가와 수정 및 삭제가 가능합니다.</div>
+                        <div className="settings-block-desc">
+                            내가 올린 건 수정/삭제, 다른 사람이 올린 건 업로더 정보만 확인해요.
+                        </div>
                     </div>
-
+                    <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                        추가
+                    </button>
                 </div>
 
                 <div className="camera-table">
                     <div className="camera-row camera-row-head">
                         <div className="col-name">카메라명</div>
-                        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-                            추가
-                        </button>
                         <div className="col-actions" />
                     </div>
+
                     <div className="camera-body">
                         {loading && <div className="camera-empty">불러오는 중…</div>}
                         {!loading && items.length === 0 && (
-                            <div className="camera-empty">카메라가 없습니다. “추가” 버튼으로 검색해 보세요.</div>
+                            <div className="camera-empty">
+                                카메라가 없습니다. “추가” 버튼으로 검색해 보세요.
+                            </div>
                         )}
                         {!loading &&
                             items.map((it) => (
                                 <div className="camera-row" key={it.id}>
                                     <div className="col-name">
                                         <span className="camera-name">{it.name}</span>
+                                        {!it.isOwner && (
+                                            <span
+                                                className="tag"
+                                                style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}
+                                            >
+                        (업로더: {it.ownerName || it.ownerUserId || "알 수 없음"})
+                      </span>
+                                        )}
                                     </div>
                                     <div className="col-actions" style={{ display: "flex", gap: 8 }}>
-                                        <button className="btn" onClick={() => onEdit(it)}>
-                                            수정
-                                        </button>
-                                        <button className="btn btn-danger" onClick={() => onDelete(it.id)}>
-                                            삭제
-                                        </button>
+                                        {it.isOwner ? (
+                                            <>
+                                                <button className="btn" onClick={() => onEdit(it)}>
+                                                    수정
+                                                </button>
+                                                <button
+                                                    className="btn btn-danger"
+                                                    onClick={() => onDelete(it.id)}
+                                                >
+                                                    삭제
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button className="btn" onClick={() => setInfoTarget(it)}>
+                                                정보
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -162,7 +190,9 @@ export default function CameraSettings() {
                 </div>
             </div>
 
-            {showAdd && <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />}
+            {showAdd && (
+                <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />
+            )}
 
             {editing && (
                 <EditCameraModal
@@ -170,19 +200,23 @@ export default function CameraSettings() {
                     onClose={() => setEditing(null)}
                     onSaved={async () => {
                         setEditing(null);
-                        await loadAssigned();
+                        await loadAll();
                     }}
                 />
+            )}
+
+            {infoTarget && (
+                <InfoModal camera={infoTarget} onClose={() => setInfoTarget(null)} />
             )}
         </div>
     );
 }
 
-/** ====== 수정 모달 ====== */
+/** ====== 수정 모달(오너 전용) ====== */
 function EditCameraModal({ camera, onClose, onSaved }) {
     const [name, setName] = useState(camera.name || "");
-    const [lat, setLat] = useState(String(camera.coordy ?? "")); // 위도(coordy)
-    const [lon, setLon] = useState(String(camera.coordx ?? "")); // 경도(coordx)
+    const [lat, setLat] = useState(String(camera.coordy ?? ""));
+    const [lon, setLon] = useState(String(camera.coordx ?? ""));
     const [isAnalisis, setIsAnalisis] = useState(!!camera.isAnalisis);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState("");
@@ -197,12 +231,12 @@ function EditCameraModal({ camera, onClose, onSaved }) {
             cameraName: name?.trim() || "",
             coordx: toNum(lon, 0),
             coordy: toNum(lat, 0),
-            isAnalisis: !!isAnalisis, // true→1, false→0
+            isAnalisis: !!isAnalisis,
         };
 
         try {
             setSaving(true);
-            const r = await api(`/api/camera/${camera.id}`, {
+            const r = await api(`/api/cam/${camera.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -305,7 +339,63 @@ function EditCameraModal({ camera, onClose, onSaved }) {
     );
 }
 
-/** ====== 추가 모달(ITS 검색) ====== */
+/** ====== 비오너용 정보 모달 ====== */
+function InfoModal({ camera, onClose }) {
+    const stop = (e) => e.stopPropagation();
+    return (
+        <div className="modal-backdrop" onMouseDown={onClose}>
+            <div className="modal-sheet cam-info" onMouseDown={stop}>
+                <div className="modal-head">
+                    <div className="cam-edit-title">카메라 정보</div>
+                    <button className="modal-x" onClick={onClose} aria-label="닫기">
+                        ×
+                    </button>
+                </div>
+
+                <div className="cam-section">
+                    <div className="cam-label">카메라 이름</div>
+                    <div className="cam-read">{camera.name}</div>
+                </div>
+
+                <div className="cam-divider" />
+
+                <div className="cam-section">
+                    <div className="cam-label">업로더</div>
+                    <div className="cam-read">
+                        {camera.ownerName || camera.ownerUserId || "알 수 없음"}
+                    </div>
+                </div>
+
+                <div className="cam-divider" />
+
+                <div className="cam-section">
+                    <div className="cam-label">위치</div>
+                    <div className="cam-read">
+                        위도: {camera.coordy ?? "-"} / 경도: {camera.coordx ?? "-"}
+                    </div>
+                </div>
+
+                <div className="cam-divider" />
+
+                <div className="cam-section">
+                    <div className="cam-label">분석 상태</div>
+                    <div className="cam-read">{camera.isAnalisis ? "ON" : "OFF"}</div>
+                </div>
+
+                <div className="cam-divider" />
+
+                <div className="cam-section">
+                    <div className="cam-label">스트림 URL</div>
+                    <div className="cam-read" style={{ wordBreak: "break-all" }}>
+                        {camera.cctvurl}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/** ====== ITS 검색 모달 ====== */
 function AddCameraModal({ onClose, onPick }) {
     const [roadType, setRoadType] = useState("its");
     const [minX, setMinX] = useState("126");
@@ -448,7 +538,9 @@ function AddCameraModal({ onClose, onPick }) {
 
                     <section className="add-right">
                         {loading && <div className="camera-empty">검색 중…</div>}
-                        {!loading && list.length === 0 && <div className="camera-empty">검색 결과가 없습니다.</div>}
+                        {!loading && list.length === 0 && (
+                            <div className="camera-empty">검색 결과가 없습니다.</div>
+                        )}
                         {!loading && list.length > 0 && (
                             <ul className="result-list">
                                 {list.map((it, i) => (
