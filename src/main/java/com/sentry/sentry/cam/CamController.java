@@ -41,10 +41,15 @@ public class CamController {
         return RTSPURL;
     }
 
+//
+//    @GetMapping("/list/{userId}")
+//    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable Long userId) {
+//    }
 
-    @GetMapping("/list/{userId}")
+
+
     @GetMapping("/list-byUserId")
-    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable Long userId) {
+    public List<CameraInfosDTO> getAllCameraInfos(@RequestParam Long userId) {
         List<Long> camIdList = camService.getCam(userId);
 
         List<CameraInfos> allCameraInfos = camService.getCameraInfos(camIdList);
