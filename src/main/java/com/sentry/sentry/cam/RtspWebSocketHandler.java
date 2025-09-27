@@ -49,7 +49,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
             try {
                 String base64Frame = frameSocketThreadClass.getLatestFrameBase64();
                 session.sendMessage(new TextMessage(base64Frame));
-                Thread.sleep(1); // TODO: grabber.getFrameRate() 반영 가능
+                Thread.sleep(10); // TODO: grabber.getFrameRate() 반영 가능
             } catch (Exception e) {
                 e.printStackTrace();
                 break;

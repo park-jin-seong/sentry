@@ -26,7 +26,6 @@ public class CamService {
     public List<CameraInfos> getCameraInfos(List<Long> cameraIds) {
         return cameraInfosRepository.findByCameraIdIn(cameraIds);
     }
-
     /** 카메라 생성 + owner 매핑(cameraassign) 추가 */
     @Transactional
     public CameraInfos addCamera(CameraInfosDTO dto, Long userId) {
@@ -110,5 +109,8 @@ public class CamService {
         cameraAssignRepository.deleteByAssignedCameraId(cameraId);
         // 마스터 삭제
         cameraInfosRepository.delete(cam);
+    }
+    public List<CameraInfos> getCameraInfosByName(String cameraName) {
+        return cameraInfosRepository.findByCameraNameContaining(cameraName);
     }
 }

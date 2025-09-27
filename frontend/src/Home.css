@@ -120,6 +120,7 @@ body {
 
 .content-area {
     flex: 1;
+    position: relative;
     padding: 20px;
     background-color: #2e2e2e;
 }
