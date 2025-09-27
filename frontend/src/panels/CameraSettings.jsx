@@ -133,14 +133,15 @@ export default function CameraSettings() {
                             내가 올린 건 수정/삭제, 다른 사람이 올린 건 업로더 정보만 확인해요.
                         </div>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-                        추가
-                    </button>
+
                 </div>
 
                 <div className="camera-table">
                     <div className="camera-row camera-row-head">
                         <div className="col-name">카메라명</div>
+                        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                            추가
+                        </button>
                         <div className="col-actions" />
                     </div>
 
