@@ -43,21 +43,8 @@ public class CamController {
 
 
     @GetMapping("/list/{userId}")
-    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable Long userId) {
-        List<Long> camIdList = camService.getCam(userId);
-
-        List<CameraInfos> allCameraInfos = camService.getCameraInfos(camIdList);
-        List<CameraInfosDTO> allCameraInfosDTO = allCameraInfos.stream()
-                .map(c -> new CameraInfosDTO(c, userId))
-                .collect(Collectors.toList());
-
-        System.out.println("allCameraInfosDTO = " + allCameraInfosDTO);
-        return allCameraInfosDTO;
-    }
-
     @GetMapping("/list-byUserId")
-    public List<CameraInfosDTO> getAllCameraInfos(@RequestParam Long userId) {
-
+    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable Long userId) {
         List<Long> camIdList = camService.getCam(userId);
 
         List<CameraInfos> allCameraInfos = camService.getCameraInfos(camIdList);
@@ -166,9 +153,6 @@ public class CamController {
         camService.delete(cam);
         return ResponseEntity.ok(Map.of("result", "deleted"));
     }
-
-
-}
     @GetMapping("/list-byName")
     public List<CameraInfosDTO> getCameraInfosByName(@RequestParam(required = false) String cameraName) {
         List<CameraInfos> allCameraInfos = camService.getCameraInfosByName(cameraName);
