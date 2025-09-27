@@ -34,7 +34,7 @@ const Home = () => {
 
     useEffect(() => {
         const script = document.createElement('script');
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_API_KEY}&libraries=services,clusterer,drawing&autoload=false`;
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=215819b4115f72be72f45137965dbc9e&libraries=services,clusterer,drawing&autoload=false`;
         script.async = true;
 
         script.onload = () => {
