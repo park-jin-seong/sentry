@@ -15,38 +15,42 @@ public class CameraController {
 
     private final CameraService service;
 
-    // 목록
+    /** 사용자 할당 목록 */
     @GetMapping("/assigned")
     public List<CameraInfosDTO> assigned(@RequestParam Long userId) {
         return service.listAssigned(userId).stream()
-                .map(CameraInfosDTO::new)
+                .map(c -> new CameraInfosDTO(c, userId))
                 .toList();
     }
 
-    // 추가/할당 (ITS 검색 결과를 그대로 보냄)
-    @PostMapping("/assign")
-    public ResponseEntity<CameraInfosDTO> assign(
-            @RequestBody CameraService.AssignReq dto,
-            @RequestParam Long userId
-    ) {
-        var info = service.saveAndAssign(dto, userId);
-        return ResponseEntity.ok(new CameraInfosDTO(info));
-    }
+    /** (선택) ITS 검색에서 추가/할당 */
+    // @PostMapping("/assign")
+    // public ResponseEntity<CameraInfosDTO> assign(
+    //         @RequestBody CameraService.AssignReq dto,
+    //         @RequestParam Long userId
+    // ) {
+    //     var info = service.saveAndAssign(dto, userId);
+    //     return ResponseEntity.ok(new CameraInfosDTO(info, userId));
+    // }
 
-    // ✅ 삭제 = 항상 하드 삭제
-    @DeleteMapping("/{cameraId}")
-    public ResponseEntity<Void> delete(@PathVariable Long cameraId) {
-        service.deleteCamera(cameraId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // (옵션) 수정
+    /** 오너만 수정 가능 */
     @PatchMapping("/{cameraId}")
     public ResponseEntity<CameraInfosDTO> update(
             @PathVariable Long cameraId,
+            @RequestParam Long userId,
             @RequestBody CameraService.CameraUpdateReq req
     ) {
-        var info = service.updateCamera(cameraId, req);
-        return ResponseEntity.ok(new CameraInfosDTO(info));
+        var info = service.updateCameraOwned(cameraId, userId, req);
+        return ResponseEntity.ok(new CameraInfosDTO(info, userId));
+    }
+
+    /** 오너면 하드삭제, 비오너면 내 매핑만 해제 */
+    @DeleteMapping("/{cameraId}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long cameraId,
+            @RequestParam Long userId
+    ) {
+        service.deleteOrUnassign(cameraId, userId);
+        return ResponseEntity.noContent().build();
     }
 }

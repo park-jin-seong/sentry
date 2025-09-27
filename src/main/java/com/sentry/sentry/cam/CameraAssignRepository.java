@@ -1,3 +1,4 @@
+// src/main/java/com/sentry/sentry/cam/CameraAssignRepository.java
 package com.sentry.sentry.cam;
 
 import com.sentry.sentry.entity.CameraAssign;
@@ -16,7 +17,6 @@ public interface CameraAssignRepository extends JpaRepository<CameraAssign, Long
     @Transactional
     void deleteByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId);
 
-    // 하드 삭제 시 모든 사용자 매핑 제거
     @Modifying
     @Transactional
     void deleteByAssignedCameraId(Long assignedCameraId);
