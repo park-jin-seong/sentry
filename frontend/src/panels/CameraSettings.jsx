@@ -130,7 +130,7 @@ export default function CameraSettings() {
                     <div>
                         <div className="settings-block-title">카메라 목록</div>
                         <div className="settings-block-desc">
-                            내가 올린 건 수정/삭제, 다른 사람이 올린 건 업로더 정보만 확인해요.
+                            카메라 추가와 수정 및 삭제가 가능합니다.
                         </div>
                     </div>
 
@@ -381,15 +381,6 @@ function InfoModal({ camera, onClose }) {
                 <div className="cam-section">
                     <div className="cam-label">분석 상태</div>
                     <div className="cam-read">{camera.isAnalisis ? "ON" : "OFF"}</div>
-                </div>
-
-                <div className="cam-divider" />
-
-                <div className="cam-section">
-                    <div className="cam-label">스트림 URL</div>
-                    <div className="cam-read" style={{ wordBreak: "break-all" }}>
-                        {camera.cctvurl}
-                    </div>
                 </div>
             </div>
         </div>
