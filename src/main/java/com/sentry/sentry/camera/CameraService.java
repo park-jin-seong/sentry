@@ -2,9 +2,11 @@
 package com.sentry.sentry.camera;
 
 import com.sentry.sentry.cam.CameraAssignRepository;
+import com.sentry.sentry.cam.CameraInfosDTO;
 import com.sentry.sentry.cam.CameraInfosRepository;
 import com.sentry.sentry.entity.CameraAssign;
 import com.sentry.sentry.entity.CameraInfos;
+import com.sentry.sentry.entity.UserAuthorityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ public class CameraService {
 
     private final CameraInfosRepository infoRepo;
     private final CameraAssignRepository assignRepo;
+    private final UserAuthorityRepository userAuthorityRepository;
+
 
     /** 사용자에게 할당된 카메라 목록 */
     @Transactional(readOnly = true)
@@ -27,39 +31,45 @@ public class CameraService {
         return ids.isEmpty() ? List.of() : infoRepo.findByCameraIdIn(ids);
     }
 
-    /** CCTV 저장 + 사용자에게 할당 (업서트) */
     @Transactional
-    public CameraInfos saveAndAssign(AssignReq item, Long userId) {
-        CameraInfos info = infoRepo.findByCctvUrl(item.cctvurl())
-                .orElseGet(() -> CameraInfos.builder()
-                        .cameraName(item.cctvname() != null ? item.cctvname() : "Unnamed")
-                        .cctvUrl(item.cctvurl())
-                        .coordx(item.coordx() != null ? item.coordx() : 0d)
-                        .coordy(item.coordy() != null ? item.coordy() : 0d)
-                        .isAnalisis(false)
-                        .ownerUserId(userId)   // 최초 업로더
-                        .build()
-                );
+    public CameraInfos addCamera(CameraInfosDTO dto, Long creatorUserId) {
+        // 1) 카메라 저장
+        CameraInfos cam = CameraInfos.builder()
+                .cameraName(dto.getCameraName())
+                .cctvUrl(dto.getCctvUrl())
+                .coordx(dto.getCoordx())
+                .coordy(dto.getCoordy())
+                .isAnalisis(Boolean.TRUE.equals(dto.getIsAnalisis()))
+                .ownerUserId(creatorUserId)
+                .build();
 
-        // 과거 데이터 보정(0/null이면 오너 지정)
-        if (info.getOwnerUserId() == null || info.getOwnerUserId() == 0L) {
-            info.setOwnerUserId(userId);
-        }
+        CameraInfos saved = infoRepo.save(cam);
 
-        if (item.cctvname() != null) info.setCameraName(item.cctvname());
-        if (item.coordx() != null)   info.setCoordx(item.coordx());
-        if (item.coordy() != null)   info.setCoordy(item.coordy());
-        info = infoRepo.save(info);
+        // 2) 권한 사용자 + 생성자 포함
+        List<Long> privilegedUserIds =
+                userAuthorityRepository.findUserIdsByAuthorities(List.of("MASTER", "OWNER"));
+        // 본인 포함 (중복 자동 제거)
+        var targetUserIds = privilegedUserIds.stream()
+                .collect(java.util.stream.Collectors.toSet());
+        targetUserIds.add(creatorUserId);
 
-        final Long camId = info.getCameraId();
-        assignRepo.findByUserIdAndAssignedCameraId(userId, camId)
-                .orElseGet(() -> assignRepo.save(CameraAssign.builder()
-                        .userId(userId)
-                        .assignedCameraId(camId)
-                        .build()));
+        // 3) 중복 없는 매핑만 insert
+        List<CameraAssign> assigns = targetUserIds.stream()
+                .filter(uid -> !assignRepo.existsByUserIdAndAssignedCameraId(uid, saved.getCameraId()))
+                .map(uid -> {
+                    CameraAssign ca = new CameraAssign();
+                    ca.setAssignedCameraId(saved.getCameraId()); // ← 엔티티 세터명과 동일해야 함
+                    ca.setUserId(uid);
+                    return ca;
+                })
+                .toList();
 
-        return info;
+        if (!assigns.isEmpty()) assignRepo.saveAll(assigns);
+
+        return saved;
     }
+
+
 
     /** 오너만 수정 허용 */
     @Transactional

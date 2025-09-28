@@ -2,8 +2,11 @@
 package com.sentry.sentry.camera;
 
 import com.sentry.sentry.cam.CameraInfosDTO;
+import com.sentry.sentry.entity.CameraInfos;
+import com.sentry.sentry.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,4 +56,15 @@ public class CameraController {
         service.deleteOrUnassign(cameraId, userId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/add")
+    public ResponseEntity<CameraInfosDTO> add(
+            @RequestBody CameraInfosDTO dto,
+            @AuthenticationPrincipal CustomUserDetails user // 토큰에서 유저 ID
+    ) {
+        Long creatorId = user.getId(); // 로그인 사용자 ID
+        CameraInfos saved = service.addCamera(dto, creatorId);
+        return ResponseEntity.ok(new CameraInfosDTO(saved, creatorId));
+    }
+
 }
