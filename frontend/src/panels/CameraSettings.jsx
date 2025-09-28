@@ -5,8 +5,6 @@ import toggleOn from "../assets/toggleon.png";
 import toggleOff from "../assets/toggleoff.png";
 import { useAuth } from "../auth.jsx";
 
-
-
 /** 안전 숫자 변환 */
 const toNum = (v, fb = 0) => {
     const n = Number(v);
@@ -19,11 +17,13 @@ export default function CameraSettings() {
     const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(null);
     const [infoTarget, setInfoTarget] = useState(null);
-    const { me } = useAuth();
+
+    const { me, loading: authLoading } = useAuth();
     const USER_ID = me?.id ?? null;
 
     /** 전체 목록 로드 */
     const loadAll = async () => {
+        if (!api.peekAccessToken() || !USER_ID) return; // 로그인/프로필 준비 전에는 호출 안 함
         setLoading(true);
         try {
             const r = await api(`/api/cam/all`);
@@ -33,11 +33,9 @@ export default function CameraSettings() {
             setItems(
                 rows.map((d) => {
                     const ownerUserId = d.ownerUserId ?? null;
-                    // 서버가 isOwner를 내려주면 그대로, 아니면 ownerUserId 비교로 결정
+                    // 서버가 isOwner를 주면 그대로 사용, 아니면 ownerUserId 비교
                     const isOwner =
-                        typeof d.isOwner === "boolean"
-                            ? d.isOwner
-                            : ownerUserId === USER_ID;
+                        typeof d.isOwner === "boolean" ? d.isOwner : ownerUserId === USER_ID;
 
                     return {
                         id: d.cameraId,
@@ -60,19 +58,27 @@ export default function CameraSettings() {
         }
     };
 
-    // 로그인(토큰) 생기면 호출
+    // 토큰/프로필 준비되면 목록 로드
     useEffect(() => {
         api.trySessionRestoreOnce?.();
+    }, []);
 
+    useEffect(() => {
         const off = api.onAccessTokenChange((t) => {
-            if (t) loadAll();
+            if (t && USER_ID) loadAll();
             else setItems([]);
         });
-
-        if (api.peekAccessToken()) loadAll();
-
         return off;
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [USER_ID]);
+
+    // 최초 진입 시: me.id가 준비되면 로드
+    useEffect(() => {
+        if (!authLoading && api.peekAccessToken() && USER_ID) {
+            loadAll();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authLoading, USER_ID]);
 
     /** ITS 검색에서 선택 → 추가 (백엔드: POST /api/cam/add) */
     const addBySelection = async (selected) => {
@@ -90,7 +96,6 @@ export default function CameraSettings() {
                     coordx: toNum(selected.lon, 0),
                     coordy: toNum(selected.lat, 0),
                     isAnalisis: false,
-                    ownerUserId: USER_ID,
                 }),
             });
             if (!r.ok) {
@@ -104,18 +109,21 @@ export default function CameraSettings() {
         }
     };
 
-    /** 수정 누르면 모달 */
+    /** 수정 모달 띄우기 (오너만) */
     const onEdit = (it) => setEditing(it);
 
-    /** 삭제(내 소유만) — 필요 시 엔드포인트 경로만 교체 */
+    /** 삭제 (오너면 하드삭제 / 비오너면 내 매핑만 해제는 백엔드 로직에 따름) */
     const onDelete = async (cameraId) => {
         if (!api.peekAccessToken()) {
             alert("로그인 후 사용하세요.");
             return;
         }
-        if (!window.confirm("정말 삭제할까요? (모든 사용자 매핑 포함 하드 삭제)")) return;
+        if (!window.confirm("정말 삭제할까요?")) return;
         try {
-            const r = await api(`/api/cam/${cameraId}`, { method: "DELETE" });
+            // ✅ 실제 동작하는 엔드포인트에 맞춰 호출 (CameraController의 /api/camera)
+            const r = await api(`/api/camera/${cameraId}?userId=${USER_ID}`, {
+                method: "DELETE",
+            });
             if (!r.ok) throw new Error("삭제 실패");
             await loadAll();
         } catch (e) {
@@ -133,26 +141,28 @@ export default function CameraSettings() {
                             카메라 추가와 수정 및 삭제가 가능합니다.
                         </div>
                     </div>
-
+                    <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                        추가
+                    </button>
                 </div>
 
                 <div className="camera-table">
                     <div className="camera-row camera-row-head">
                         <div className="col-name">카메라명</div>
-                        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-                            추가
-                        </button>
                         <div className="col-actions" />
                     </div>
 
                     <div className="camera-body">
-                        {loading && <div className="camera-empty">불러오는 중…</div>}
-                        {!loading && items.length === 0 && (
+                        {(authLoading || loading) && (
+                            <div className="camera-empty">불러오는 중…</div>
+                        )}
+                        {!authLoading && !loading && items.length === 0 && (
                             <div className="camera-empty">
                                 카메라가 없습니다. “추가” 버튼으로 검색해 보세요.
                             </div>
                         )}
-                        {!loading &&
+                        {!authLoading &&
+                            !loading &&
                             items.map((it) => (
                                 <div className="camera-row" key={it.id}>
                                     <div className="col-name">
@@ -237,7 +247,8 @@ function EditCameraModal({ camera, onClose, onSaved }) {
 
         try {
             setSaving(true);
-            const r = await api(`/api/cam/${camera.id}`, {
+            // ✅ CameraController의 PATCH 엔드포인트 사용
+            const r = await api(`/api/camera/${camera.id}?userId=${camera.ownerUserId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -382,6 +393,8 @@ function InfoModal({ camera, onClose }) {
                     <div className="cam-label">분석 상태</div>
                     <div className="cam-read">{camera.isAnalisis ? "ON" : "OFF"}</div>
                 </div>
+
+
             </div>
         </div>
     );

@@ -1,18 +1,26 @@
+// src/main/java/com/sentry/sentry/entity/UserAuthority.java
 package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "userauthority")
+@Table(name = "userauthority", schema = "sentry_client")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
+@IdClass(UserAuthority.Pk.class)
 public class UserAuthority {
+    @Id
+    @Column(name = "userId", nullable = false)
+    private Long userId;
 
     @Id
-    @Column(name = "userId", nullable = false)  // DB 컬럼명과 정확히 맞춤
-    private long userId;
+    @Column(name = "authority", nullable = false, length = 45)
+    private String authority;
 
-    @Column(name = "authority", length = 45, nullable = false)
-    private String authority;  // 예: ADMIN / OWNER / MASTER / OBSERVER 등
+    @Data @NoArgsConstructor @AllArgsConstructor
+    public static class Pk implements java.io.Serializable {
+        private Long userId;
+        private String authority;
+    }
 }

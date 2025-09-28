@@ -14,7 +14,7 @@ public class CameraInfos {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cameraId")   // ✅ DB 컬럼명 그대로
+    @Column(name = "cameraId")
     private Long cameraId;
 
     @Column(name = "cameraName", nullable = false, length = 200)
@@ -36,6 +36,6 @@ public class CameraInfos {
     private Long ownerUserId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "analysisServerId")   // ✅ DB 컬럼명 그대로
+    @JoinColumn(name = "analysisServerId")
     private ServerInfo analysisServer;
 }

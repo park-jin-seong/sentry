@@ -78,6 +78,7 @@ public class AccountManageController {
         return userinfoRepository.findAllById(ids).stream()
                 .sorted(Comparator.comparing(Userinfo::getUsername))
                 .map(u -> Map.<String, Object>of(
+                        "id", u.getId(),
                         "username", u.getUsername(),
                         "nickname", u.getNickname(),
                         "role", roleMap.get(u.getId())  // OWNER | OBSERVER

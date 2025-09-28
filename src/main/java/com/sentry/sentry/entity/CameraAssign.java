@@ -5,15 +5,11 @@ import lombok.*;
 
 // com.sentry.sentry.entity.CameraAssign
 @Entity
-@Table(
-        name = "cameraassign",
-        catalog = "sentry_client",
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"userId", "assignedcameraId"},
-                name = "uq_user_camera"
-        )
-)
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "cameraassign", schema = "sentry_client")
+@Getter @Setter
+@NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class CameraAssign {
 
     @Id
@@ -25,4 +21,8 @@ public class CameraAssign {
 
     @Column(name = "assignedcameraId", nullable = false)
     private Long assignedCameraId;
+
+
 }
+
+

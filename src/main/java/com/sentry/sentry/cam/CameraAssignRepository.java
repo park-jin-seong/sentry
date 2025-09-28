@@ -13,6 +13,8 @@ public interface CameraAssignRepository extends JpaRepository<CameraAssign, Long
     List<CameraAssign> findByUserId(Long userId);
     Optional<CameraAssign> findByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId);
 
+    boolean existsByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId); // ✅
+
     @Modifying
     @Transactional
     void deleteByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId);

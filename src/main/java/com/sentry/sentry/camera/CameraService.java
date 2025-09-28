@@ -1,10 +1,12 @@
-// src/main/java/com/sentry/sentry/camera/CameraService.java
 package com.sentry.sentry.camera;
 
 import com.sentry.sentry.cam.CameraAssignRepository;
+import com.sentry.sentry.cam.CameraInfosDTO;
 import com.sentry.sentry.cam.CameraInfosRepository;
 import com.sentry.sentry.entity.CameraAssign;
 import com.sentry.sentry.entity.CameraInfos;
+import com.sentry.sentry.entity.UserAuthorityRepository;
+import com.sentry.sentry.entity.UserinfoRepository; // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ public class CameraService {
 
     private final CameraInfosRepository infoRepo;
     private final CameraAssignRepository assignRepo;
+    private final UserAuthorityRepository userAuthorityRepository;
+    private final UserinfoRepository userinfoRepository; // 주입 추가
 
     /** 사용자에게 할당된 카메라 목록 */
     @Transactional(readOnly = true)
@@ -27,38 +31,37 @@ public class CameraService {
         return ids.isEmpty() ? List.of() : infoRepo.findByCameraIdIn(ids);
     }
 
-    /** CCTV 저장 + 사용자에게 할당 (업서트) */
     @Transactional
-    public CameraInfos saveAndAssign(AssignReq item, Long userId) {
-        CameraInfos info = infoRepo.findByCctvUrl(item.cctvurl())
-                .orElseGet(() -> CameraInfos.builder()
-                        .cameraName(item.cctvname() != null ? item.cctvname() : "Unnamed")
-                        .cctvUrl(item.cctvurl())
-                        .coordx(item.coordx() != null ? item.coordx() : 0d)
-                        .coordy(item.coordy() != null ? item.coordy() : 0d)
-                        .isAnalisis(false)
-                        .ownerUserId(userId)   // 최초 업로더
-                        .build()
-                );
+    public CameraInfos addCamera(CameraInfosDTO dto, Long creatorUserId) {
+        CameraInfos cam = CameraInfos.builder()
+                .cameraName(dto.getCameraName())
+                .cctvUrl(dto.getCctvUrl())
+                .coordx(dto.getCoordx())
+                .coordy(dto.getCoordy())
+                .isAnalisis(Boolean.TRUE.equals(dto.getIsAnalisis()))
+                .ownerUserId(creatorUserId)
+                .build();
 
-        // 과거 데이터 보정(0/null이면 오너 지정)
-        if (info.getOwnerUserId() == null || info.getOwnerUserId() == 0L) {
-            info.setOwnerUserId(userId);
-        }
+        CameraInfos saved = infoRepo.save(cam);
 
-        if (item.cctvname() != null) info.setCameraName(item.cctvname());
-        if (item.coordx() != null)   info.setCoordx(item.coordx());
-        if (item.coordy() != null)   info.setCoordy(item.coordy());
-        info = infoRepo.save(info);
+        List<Long> privilegedUserIds =
+                userAuthorityRepository.findUserIdsByAuthorities(List.of("MASTER", "OWNER"));
 
-        final Long camId = info.getCameraId();
-        assignRepo.findByUserIdAndAssignedCameraId(userId, camId)
-                .orElseGet(() -> assignRepo.save(CameraAssign.builder()
-                        .userId(userId)
-                        .assignedCameraId(camId)
-                        .build()));
+        var targetUserIds = privilegedUserIds.stream()
+                .collect(java.util.stream.Collectors.toSet());
+        targetUserIds.add(creatorUserId);
 
-        return info;
+        List<CameraAssign> assigns = targetUserIds.stream()
+                .filter(uid -> !assignRepo.existsByUserIdAndAssignedCameraId(uid, saved.getCameraId()))
+                .map(uid -> CameraAssign.builder()
+                        .assignedCameraId(saved.getCameraId())
+                        .userId(uid)
+                        .build())
+                .toList();
+
+        if (!assigns.isEmpty()) assignRepo.saveAll(assigns);
+
+        return saved;
     }
 
     /** 오너만 수정 허용 */
@@ -76,7 +79,7 @@ public class CameraService {
         return infoRepo.save(c);
     }
 
-    /** 오너면 하드삭제(모든 매핑 제거 후 마스터 삭제), 비오너면 내 매핑만 해제 */
+    /** 오너면 하드삭제, 비오너면 내 매핑만 해제 */
     @Transactional
     public void deleteOrUnassign(Long cameraId, Long userId) {
         var c = infoRepo.findById(cameraId)
@@ -93,4 +96,30 @@ public class CameraService {
     /** 프론트 전송용 요청 DTO */
     public record AssignReq(String cctvname, String cctvurl, Double coordx, Double coordy, String cctvformat) {}
     public record CameraUpdateReq(String cameraName, Double coordx, Double coordy, Boolean isAnalisis) {}
+
+    @Transactional
+    public void assignCamera(Long userId, Long cameraId) {
+        if (!assignRepo.existsByUserIdAndAssignedCameraId(userId, cameraId)) {
+            var ca = CameraAssign.builder()
+                    .userId(userId)
+                    .assignedCameraId(cameraId)
+                    .build();
+            assignRepo.save(ca);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> listAssignedIds(Long userId) {
+        return assignRepo.findByUserId(userId).stream()
+                .map(CameraAssign::getAssignedCameraId)
+                .toList();
+    }
+
+    /** username 기반 해제: 서비스에서 트랜잭션으로 처리 */
+    @Transactional
+    public void unassignByUsername(String username, Long cameraId) {
+        var userOpt = userinfoRepository.findByUsername(username);
+        if (userOpt.isEmpty()) throw new IllegalArgumentException("user not found");
+        assignRepo.deleteByUserIdAndAssignedCameraId(userOpt.get().getId(), cameraId);
+    }
 }
