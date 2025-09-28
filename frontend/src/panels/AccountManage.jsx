@@ -301,6 +301,7 @@ export default function AccountManage() {
 }
 
 /** 카메라 할당 모달 */
+/** 카메라 할당 모달 */
 function AssignCameraModal({ user, onClose, onAssigned }) {
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState([]);        // 전체 카메라
@@ -308,13 +309,16 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState("");
 
+    // ✅ 추가: 최초 배정 상태를 저장해서 비교에 사용
+    const [initialAssigned, setInitialAssigned] = useState([]); // number[]
+
     useEffect(() => {
         (async () => {
             setErr("");
             setLoading(true);
             try {
                 // 1) 전체 카메라
-                const allRes = await api(ENDPOINTS.camAll);
+                const allRes = await api("/api/cam/all");
                 if (!allRes.ok) throw new Error("카메라 목록 조회 실패");
                 const allList = await allRes.json();
 
@@ -323,24 +327,27 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
                 let assignedIds = [];
 
                 if (targetUserId) {
-                    const asgIdsRes = await api(ENDPOINTS.assignedIds(targetUserId));
+                    const asgIdsRes = await api(`/api/camera/assigned/ids?userId=${encodeURIComponent(targetUserId)}`);
                     if (asgIdsRes.ok) {
                         const arr = await asgIdsRes.json();
                         assignedIds = Array.isArray(arr) ? arr.map(Number).filter(Boolean) : [];
                     }
                 } else {
-                    // userId가 없으면 username 기반 ID 배열 조회 사용
-                    const byName = await api(ENDPOINTS.assignedIdsByUsername(user.username));
+                    // (선택) username 기반 ID 조회 엔드포인트가 있다면 여기서 사용
+                    // 예: /api/camera/assigned/ids/by-username?username=...
+                    const byName = await api(`/api/camera/assigned/ids/by-username?username=${encodeURIComponent(user.username)}`);
                     if (byName.ok) {
                         const arr = await byName.json();
                         assignedIds = Array.isArray(arr) ? arr.map(Number).filter(Boolean) : [];
                     }
                 }
 
-                // 3) 상태 반영
                 setRows(allList || []);
 
-                // 이미 배정된 것들을 선택 상태로 초기화
+                // ✅ 최초 상태 저장
+                setInitialAssigned(assignedIds);
+
+                // 선택 상태 초기화
                 const initChecked = {};
                 for (const id of assignedIds) initChecked[id] = true;
                 setChecked(initChecked);
@@ -360,43 +367,68 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
 
     const save = async () => {
         if (saving) return;
-        if (allSelectedIds.length === 0) {
-            alert("하나 이상 선택하세요.");
+
+        const targetUserId = user.id ?? user.userId;
+        if (!targetUserId) {
+            alert("userId를 찾을 수 없어 저장할 수 없습니다. 계정 목록 API에서 id를 내려주세요.");
             return;
         }
+
+        // ✅ 추가/삭제 분리
+        const selected = new Set(allSelectedIds);
+        const initial = new Set(initialAssigned);
+
+        const toAdd = [...selected].filter((id) => !initial.has(id));
+        const toRemove = [...initial].filter((id) => !selected.has(id));
+
+        if (toAdd.length === 0 && toRemove.length === 0) {
+            alert("변경 사항이 없습니다.");
+            return;
+        }
+
         setSaving(true);
         setErr("");
         try {
-            const targetUserId = user.id ?? user.userId;
-
-            if (targetUserId) {
-                // 배치 API 시도
-                const res = await api(ENDPOINTS.assignBatch, {
+            // 1) 추가(배정)
+            if (toAdd.length > 0) {
+                const res = await api("/api/camera/assign/batch", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ userId: targetUserId, cameraIds: allSelectedIds }),
+                    body: JSON.stringify({ userId: targetUserId, cameraIds: toAdd }),
                 });
 
                 if (!res.ok) {
-                    // 실패 시 단건 반복
-                    for (const cid of allSelectedIds) {
-                        const r1 = await api(`${ENDPOINTS.assignOne}?userId=${encodeURIComponent(targetUserId)}&cameraId=${encodeURIComponent(cid)}`, {
+                    // 배치 실패 시 단건으로 폴백
+                    for (const cid of toAdd) {
+                        const r1 = await api(`/api/camera/assign?userId=${encodeURIComponent(targetUserId)}&cameraId=${encodeURIComponent(cid)}`, {
                             method: "POST",
                         });
-                        if (!r1.ok) throw new Error("일부 할당 실패");
+                        if (!r1.ok) throw new Error("일부 할당(추가) 실패");
                     }
-                }
-            } else {
-                // id가 없으면 username 기반 폴백
-                for (const cid of allSelectedIds) {
-                    const r2 = await api(`/api/camera/assign/by-username?username=${encodeURIComponent(user.username)}&cameraId=${encodeURIComponent(cid)}`, {
-                        method: "POST",
-                    });
-                    if (!r2.ok) throw new Error("username 기반 할당 실패");
                 }
             }
 
-            alert(`총 ${allSelectedIds.length}개 카메라가 '${user.username}'에 할당되었습니다.`);
+            // 2) 삭제(할당 해제)
+            if (toRemove.length > 0) {
+                // NOTE: 이미 구현된 엔드포인트 사용:
+                // DELETE /api/camera/{cameraId}?userId={targetUserId}
+                const results = await Promise.all(
+                    toRemove.map((cid) =>
+                        api(`/api/camera/${encodeURIComponent(cid)}?userId=${encodeURIComponent(targetUserId)}`, {
+                            method: "DELETE",
+                        })
+                    )
+                );
+
+                const anyFail = results.some((r) => !r.ok);
+                if (anyFail) throw new Error("일부 할당 해제(삭제) 실패");
+            }
+
+            alert(
+                `완료!\n추가: ${toAdd.length}개, 삭제: ${toRemove.length}개\n대상: '${user.username}'`
+            );
+
+            // 저장 후 모달 닫기/콜백
             onAssigned?.();
         } catch (e) {
             setErr(e.message || "저장 실패");
@@ -412,11 +444,12 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
             <div className="modal-sheet" onMouseDown={stop} style={{ maxWidth: 720 }}>
                 <div className="modal-head">
                     <div className="st-h3">카메라 할당</div>
-                    <button className="modal-x" onClick={onClose} aria-label="닫기">
-                        ×
-                    </button>
+                    <button className="modal-x" onClick={onClose} aria-label="닫기">×</button>
                 </div>
 
+                <div style={{ marginBottom: 8, opacity: 0.8 }}>
+                    대상 사용자: <b>{user.username}</b> (id: {user.id ?? user.userId ?? "?"})
+                </div>
 
                 {loading ? (
                     <div className="st-label">불러오는 중…</div>
@@ -448,16 +481,10 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
                     </div>
                 )}
 
-                {err && (
-                    <div className="st-label" style={{ color: "#f66", marginTop: 8 }}>
-                        {err}
-                    </div>
-                )}
+                {err && <div className="st-label" style={{ color: "#f66", marginTop: 8 }}>{err}</div>}
 
                 <div className="cam-actions" style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <button className="st-btn" onClick={onClose}>
-                        취소
-                    </button>
+                    <button className="st-btn" onClick={onClose}>취소</button>
                     <button className="st-primary" onClick={save} disabled={saving || loading}>
                         {saving ? "저장 중…" : "저장"}
                     </button>

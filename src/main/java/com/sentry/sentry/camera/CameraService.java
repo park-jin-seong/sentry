@@ -1,4 +1,3 @@
-// src/main/java/com/sentry/sentry/camera/CameraService.java
 package com.sentry.sentry.camera;
 
 import com.sentry.sentry.cam.CameraAssignRepository;
@@ -7,6 +6,7 @@ import com.sentry.sentry.cam.CameraInfosRepository;
 import com.sentry.sentry.entity.CameraAssign;
 import com.sentry.sentry.entity.CameraInfos;
 import com.sentry.sentry.entity.UserAuthorityRepository;
+import com.sentry.sentry.entity.UserinfoRepository; // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +20,7 @@ public class CameraService {
     private final CameraInfosRepository infoRepo;
     private final CameraAssignRepository assignRepo;
     private final UserAuthorityRepository userAuthorityRepository;
-
+    private final UserinfoRepository userinfoRepository; // ✅ 주입 추가
 
     /** 사용자에게 할당된 카메라 목록 */
     @Transactional(readOnly = true)
@@ -33,7 +33,6 @@ public class CameraService {
 
     @Transactional
     public CameraInfos addCamera(CameraInfosDTO dto, Long creatorUserId) {
-        // 1) 카메라 저장
         CameraInfos cam = CameraInfos.builder()
                 .cameraName(dto.getCameraName())
                 .cctvUrl(dto.getCctvUrl())
@@ -45,31 +44,25 @@ public class CameraService {
 
         CameraInfos saved = infoRepo.save(cam);
 
-        // 2) 권한 사용자 + 생성자 포함
         List<Long> privilegedUserIds =
                 userAuthorityRepository.findUserIdsByAuthorities(List.of("MASTER", "OWNER"));
-        // 본인 포함 (중복 자동 제거)
+
         var targetUserIds = privilegedUserIds.stream()
                 .collect(java.util.stream.Collectors.toSet());
         targetUserIds.add(creatorUserId);
 
-        // 3) 중복 없는 매핑만 insert
         List<CameraAssign> assigns = targetUserIds.stream()
                 .filter(uid -> !assignRepo.existsByUserIdAndAssignedCameraId(uid, saved.getCameraId()))
-                .map(uid -> {
-                    CameraAssign ca = new CameraAssign();
-                    ca.setAssignedCameraId(saved.getCameraId()); // ← 엔티티 세터명과 동일해야 함
-                    ca.setUserId(uid);
-                    return ca;
-                })
+                .map(uid -> CameraAssign.builder()
+                        .assignedCameraId(saved.getCameraId())
+                        .userId(uid)
+                        .build())
                 .toList();
 
         if (!assigns.isEmpty()) assignRepo.saveAll(assigns);
 
         return saved;
     }
-
-
 
     /** 오너만 수정 허용 */
     @Transactional
@@ -86,7 +79,7 @@ public class CameraService {
         return infoRepo.save(c);
     }
 
-    /** 오너면 하드삭제(모든 매핑 제거 후 마스터 삭제), 비오너면 내 매핑만 해제 */
+    /** 오너면 하드삭제, 비오너면 내 매핑만 해제 */
     @Transactional
     public void deleteOrUnassign(Long cameraId, Long userId) {
         var c = infoRepo.findById(cameraId)
@@ -107,7 +100,7 @@ public class CameraService {
     @Transactional
     public void assignCamera(Long userId, Long cameraId) {
         if (!assignRepo.existsByUserIdAndAssignedCameraId(userId, cameraId)) {
-            CameraAssign ca = CameraAssign.builder()
+            var ca = CameraAssign.builder()
                     .userId(userId)
                     .assignedCameraId(cameraId)
                     .build();
@@ -122,4 +115,11 @@ public class CameraService {
                 .toList();
     }
 
+    /** ✅ username 기반 해제: 서비스에서 트랜잭션으로 처리 */
+    @Transactional
+    public void unassignByUsername(String username, Long cameraId) {
+        var userOpt = userinfoRepository.findByUsername(username);
+        if (userOpt.isEmpty()) throw new IllegalArgumentException("user not found");
+        assignRepo.deleteByUserIdAndAssignedCameraId(userOpt.get().getId(), cameraId);
+    }
 }
