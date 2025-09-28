@@ -103,4 +103,16 @@ public class CameraService {
     /** 프론트 전송용 요청 DTO */
     public record AssignReq(String cctvname, String cctvurl, Double coordx, Double coordy, String cctvformat) {}
     public record CameraUpdateReq(String cameraName, Double coordx, Double coordy, Boolean isAnalisis) {}
+
+    @Transactional
+    public void assignCamera(Long userId, Long cameraId) {
+        if (!assignRepo.existsByUserIdAndAssignedCameraId(userId, cameraId)) {
+            CameraAssign ca = CameraAssign.builder()
+                    .userId(userId)
+                    .assignedCameraId(cameraId)
+                    .build();
+            assignRepo.save(ca);
+        }
+    }
+
 }

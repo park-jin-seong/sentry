@@ -131,4 +131,5 @@ public class CamService {
     public List<CameraInfos> getCameraInfosByName(String cameraName) {
         return cameraInfosRepository.findByCameraNameContaining(cameraName);
     }
+
 }

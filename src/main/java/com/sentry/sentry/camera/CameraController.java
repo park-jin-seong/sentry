@@ -1,7 +1,9 @@
 // src/main/java/com/sentry/sentry/camera/CameraController.java
 package com.sentry.sentry.camera;
 
+import com.sentry.sentry.cam.CamService;
 import com.sentry.sentry.cam.CameraInfosDTO;
+import java.util.Map;
 import com.sentry.sentry.entity.CameraInfos;
 import com.sentry.sentry.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,8 @@ import java.util.List;
 public class CameraController {
 
     private final CameraService service;
+    private final CamService camService;
+    private final com.sentry.sentry.entity.UserinfoRepository userinfoRepository;
 
     /** 사용자 할당 목록 */
     @GetMapping("/assigned")
@@ -66,5 +70,40 @@ public class CameraController {
         CameraInfos saved = service.addCamera(dto, creatorId);
         return ResponseEntity.ok(new CameraInfosDTO(saved, creatorId));
     }
+
+    @PostMapping("/assign")
+    public ResponseEntity<?> assignOne(
+            @RequestParam Long userId,
+            @RequestParam Long cameraId
+    ) {
+        service.assignCamera(userId, cameraId); // ✅ CameraService 호출
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/assign/batch")
+    public ResponseEntity<?> assignBatch(@RequestBody AssignBatchReq req) {
+        if (req == null || req.userId() == null || req.cameraIds() == null || req.cameraIds().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "userId/cameraIds required"));
+        }
+        req.cameraIds().forEach(cid -> service.assignCamera(req.userId(), cid));
+        return ResponseEntity.ok(Map.of("assigned", req.cameraIds().size()));
+    }
+
+    /** username 기반 단건 할당 (프론트에서 user.id가 없을 때 폴백용) */
+    @PostMapping("/assign/by-username")
+    public ResponseEntity<?> assignByUsername(
+            @RequestParam String username,
+            @RequestParam Long cameraId
+    ) {
+        var userOpt = userinfoRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error","user not found"));
+        }
+        service.assignCamera(userOpt.get().getId(), cameraId);
+        return ResponseEntity.ok().build();
+    }
+
+    /** 배치 요청 DTO (레코드) */
+    public record AssignBatchReq(Long userId, java.util.List<Long> cameraIds) {}
 
 }
