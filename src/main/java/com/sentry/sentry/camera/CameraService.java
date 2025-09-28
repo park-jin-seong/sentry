@@ -20,7 +20,7 @@ public class CameraService {
     private final CameraInfosRepository infoRepo;
     private final CameraAssignRepository assignRepo;
     private final UserAuthorityRepository userAuthorityRepository;
-    private final UserinfoRepository userinfoRepository; // ✅ 주입 추가
+    private final UserinfoRepository userinfoRepository; // 주입 추가
 
     /** 사용자에게 할당된 카메라 목록 */
     @Transactional(readOnly = true)
@@ -115,7 +115,7 @@ public class CameraService {
                 .toList();
     }
 
-    /** ✅ username 기반 해제: 서비스에서 트랜잭션으로 처리 */
+    /** username 기반 해제: 서비스에서 트랜잭션으로 처리 */
     @Transactional
     public void unassignByUsername(String username, Long cameraId) {
         var userOpt = userinfoRepository.findByUsername(username);

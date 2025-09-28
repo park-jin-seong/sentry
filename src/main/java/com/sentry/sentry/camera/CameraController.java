@@ -120,13 +120,13 @@ public class CameraController {
         return ResponseEntity.ok(service.listAssignedIds(uid));
     }
 
-    /** ✅ username 기반 해제 (프론트 폴백용) */
+    /** username 기반 해제 (프론트 폴백용) */
     @DeleteMapping("/assign/by-username")
     public ResponseEntity<?> unassignByUsername(
             @RequestParam String username,
             @RequestParam Long cameraId
     ) {
-        service.unassignByUsername(username, cameraId); // ✅ 서비스로 위임 (트랜잭션)
+        service.unassignByUsername(username, cameraId); // 서비스로 위임 (트랜잭션)
         return ResponseEntity.noContent().build();
     }
 
