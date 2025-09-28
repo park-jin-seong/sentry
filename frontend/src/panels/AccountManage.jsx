@@ -12,8 +12,11 @@ const ENDPOINTS = {
     resetPw: (username) => `/api/accounts/${encodeURIComponent(username)}/userpassword`,
     remove: (username) => `/api/accounts/${encodeURIComponent(username)}`,
     camAll: "/api/cam/all",
-    assignOne: "/api/camera/assign",          // POST ?userId=&cameraId=
-    assignBatch: "/api/camera/assign/batch",  // POST JSON { userId, cameraIds: [] }
+    assignOne: "/api/camera/assign",                // POST ?userId=&cameraId=
+    assignBatch: "/api/camera/assign/batch",        // POST JSON { userId, cameraIds: [] }
+    assignedIds: (userId) => `/api/camera/assigned/ids?userId=${encodeURIComponent(userId)}`, // GET -> [id...]
+    assignedIdsByUsername: (username) =>
+        `/api/camera/assigned/ids/by-username?username=${encodeURIComponent(username)}`,       // GET -> [id...]
 };
 
 export default function AccountManage() {
@@ -80,23 +83,33 @@ export default function AccountManage() {
             const status = res.status;
             const text = await res.text();
             let data = null;
-            try { data = text ? JSON.parse(text) : null; } catch (e) { console.error("JSON parse error", e, text); }
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
+                console.error("JSON parse error", e, text);
+            }
 
             if (!res.ok) {
                 console.error("계정 목록 조회 실패", status, data);
                 setItems([]);
                 setErrorMsg(
-                    status === 401 ? "로그인이 필요합니다."
-                        : status === 403 ? "권한이 없습니다."
+                    status === 401
+                        ? "로그인이 필요합니다."
+                        : status === 403
+                            ? "권한이 없습니다."
                             : "계정 목록을 불러오지 못했습니다."
                 );
                 return;
             }
             const list =
-                Array.isArray(data) ? data
-                    : Array.isArray(data?.items) ? data.items
-                        : Array.isArray(data?.content) ? data.content
-                            : Array.isArray(data?.data) ? data.data
+                Array.isArray(data)
+                    ? data
+                    : Array.isArray(data?.items)
+                        ? data.items
+                        : Array.isArray(data?.content)
+                            ? data.content
+                            : Array.isArray(data?.data)
+                                ? data.data
                                 : [];
             setItems(list);
         } catch (err) {
@@ -201,7 +214,7 @@ export default function AccountManage() {
                         <button
                             type="button"
                             className="st-eye"
-                            onClick={() => setForm(s => ({ ...s, showPw: !s.showPw }))}
+                            onClick={() => setForm((s) => ({ ...s, showPw: !s.showPw }))}
                             aria-label={form.showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
                         >
                             <img src={form.showPw ? hideIcon : eyeIcon} alt="" />
@@ -260,11 +273,7 @@ export default function AccountManage() {
                                             </button>
 
                                             {canAssign && (
-                                                <button
-                                                    type="button"
-                                                    className="st-btn"
-                                                    onClick={() => setAssignTargetUser(u)}
-                                                >
+                                                <button type="button" className="st-btn" onClick={() => setAssignTargetUser(u)}>
                                                     카메라 할당
                                                 </button>
                                             )}
@@ -292,11 +301,10 @@ export default function AccountManage() {
 }
 
 /** 카메라 할당 모달 */
-/** 카메라 할당 모달 */
 function AssignCameraModal({ user, onClose, onAssigned }) {
     const [loading, setLoading] = useState(true);
-    const [rows, setRows] = useState([]);
-    const [checked, setChecked] = useState({});
+    const [rows, setRows] = useState([]);        // 전체 카메라
+    const [checked, setChecked] = useState({});  // { [cameraId]: true }
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState("");
 
@@ -305,10 +313,37 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
             setErr("");
             setLoading(true);
             try {
-                const r = await api("/api/cam/all");
-                if (!r.ok) throw new Error("카메라 목록 조회 실패");
-                const list = await r.json();
-                setRows(list || []);
+                // 1) 전체 카메라
+                const allRes = await api(ENDPOINTS.camAll);
+                if (!allRes.ok) throw new Error("카메라 목록 조회 실패");
+                const allList = await allRes.json();
+
+                // 2) 해당 유저에게 이미 배정된 카메라 ID
+                const targetUserId = user.id ?? user.userId ?? null;
+                let assignedIds = [];
+
+                if (targetUserId) {
+                    const asgIdsRes = await api(ENDPOINTS.assignedIds(targetUserId));
+                    if (asgIdsRes.ok) {
+                        const arr = await asgIdsRes.json();
+                        assignedIds = Array.isArray(arr) ? arr.map(Number).filter(Boolean) : [];
+                    }
+                } else {
+                    // userId가 없으면 username 기반 ID 배열 조회 사용
+                    const byName = await api(ENDPOINTS.assignedIdsByUsername(user.username));
+                    if (byName.ok) {
+                        const arr = await byName.json();
+                        assignedIds = Array.isArray(arr) ? arr.map(Number).filter(Boolean) : [];
+                    }
+                }
+
+                // 3) 상태 반영
+                setRows(allList || []);
+
+                // 이미 배정된 것들을 선택 상태로 초기화
+                const initChecked = {};
+                for (const id of assignedIds) initChecked[id] = true;
+                setChecked(initChecked);
             } catch (e) {
                 setErr(e.message || "목록을 불러오지 못했습니다.");
                 setRows([]);
@@ -316,10 +351,12 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
                 setLoading(false);
             }
         })();
-    }, []);
+    }, [user]);
 
     const toggle = (id) => setChecked((s) => ({ ...s, [id]: !s[id] }));
-    const allSelectedIds = Object.entries(checked).filter(([, v]) => v).map(([k]) => Number(k));
+    const allSelectedIds = Object.entries(checked)
+        .filter(([, v]) => v)
+        .map(([k]) => Number(k));
 
     const save = async () => {
         if (saving) return;
@@ -330,11 +367,10 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
         setSaving(true);
         setErr("");
         try {
-            // ✅ 우선 userId 확인
             const targetUserId = user.id ?? user.userId;
 
             if (targetUserId) {
-                // 일반 배치 API 사용
+                // 배치 API 시도
                 const res = await api(ENDPOINTS.assignBatch, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -342,7 +378,7 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
                 });
 
                 if (!res.ok) {
-                    // assignBatch 실패 시 → assignOne 개별 호출
+                    // 실패 시 단건 반복
                     for (const cid of allSelectedIds) {
                         const r1 = await api(`${ENDPOINTS.assignOne}?userId=${encodeURIComponent(targetUserId)}&cameraId=${encodeURIComponent(cid)}`, {
                             method: "POST",
@@ -351,7 +387,7 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
                     }
                 }
             } else {
-                // ✅ userId 가 없으면 → username 기반 API 호출
+                // id가 없으면 username 기반 폴백
                 for (const cid of allSelectedIds) {
                     const r2 = await api(`/api/camera/assign/by-username?username=${encodeURIComponent(user.username)}&cameraId=${encodeURIComponent(cid)}`, {
                         method: "POST",
@@ -376,45 +412,52 @@ function AssignCameraModal({ user, onClose, onAssigned }) {
             <div className="modal-sheet" onMouseDown={stop} style={{ maxWidth: 720 }}>
                 <div className="modal-head">
                     <div className="st-h3">카메라 할당</div>
-                    <button className="modal-x" onClick={onClose} aria-label="닫기">×</button>
+                    <button className="modal-x" onClick={onClose} aria-label="닫기">
+                        ×
+                    </button>
                 </div>
 
-                <div style={{ marginBottom: 8, opacity: 0.8 }}>
-                    대상 사용자: <b>{user.username}</b> (id: {user.id ?? user.userId ?? "?"})
-                </div>
 
                 {loading ? (
                     <div className="st-label">불러오는 중…</div>
                 ) : rows.length === 0 ? (
                     <div className="st-label">카메라가 없습니다.</div>
                 ) : (
-                    <div style={{ maxHeight: 420, overflow: "auto", border: "1px solid #ffffff20", borderRadius: 8, padding: 8 }}>
-                        {rows.map((c) => (
-                            <label
-                                key={c.cameraId}
-                                style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", cursor: "pointer" }}
-                                title={c.cctvUrl}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={!!checked[c.cameraId]}
-                                    onChange={() => toggle(c.cameraId)}
-                                />
-                                <div style={{ flex: 1 }}>
-                                    <div><b>{c.cameraName}</b></div>
-                                    <div style={{ fontSize: 12, opacity: 0.7 }}>
-                                        ID: {c.cameraId} · 좌표: {c.coordy ?? "-"}, {c.coordx ?? "-"}
-                                    </div>
-                                </div>
-                            </label>
-                        ))}
+                    <div className="chip-list-wrap">
+                        <div className="chip-list-title">카메라명</div>
+                        <div className="chip-sep" />
+                        <div className="chip-list">
+                            {rows.map((c) => {
+                                const id = c.cameraId;
+                                const selected = !!checked[id];
+                                return (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        className={`chip ${selected ? "is-selected" : ""}`}
+                                        title={c.cctvUrl || ""}
+                                        onClick={() => toggle(id)}
+                                    >
+                                        <span className="chip-text">{c.cameraName}</span>
+                                        {selected && <span className="chip-check">✔</span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="chip-sep" />
                     </div>
                 )}
 
-                {err && <div className="st-label" style={{ color: "#f66", marginTop: 8 }}>{err}</div>}
+                {err && (
+                    <div className="st-label" style={{ color: "#f66", marginTop: 8 }}>
+                        {err}
+                    </div>
+                )}
 
                 <div className="cam-actions" style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <button className="st-btn" onClick={onClose}>취소</button>
+                    <button className="st-btn" onClick={onClose}>
+                        취소
+                    </button>
                     <button className="st-primary" onClick={save} disabled={saving || loading}>
                         {saving ? "저장 중…" : "저장"}
                     </button>

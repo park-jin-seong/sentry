@@ -115,4 +115,11 @@ public class CameraService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<Long> listAssignedIds(Long userId) {
+        return assignRepo.findByUserId(userId).stream()
+                .map(CameraAssign::getAssignedCameraId)
+                .toList();
+    }
+
 }

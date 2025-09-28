@@ -103,6 +103,36 @@ public class CameraController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/assign/by-username")
+    public ResponseEntity<?> assignByUsernameGet(
+            @RequestParam String username,
+            @RequestParam Long cameraId
+    ) {
+        var userOpt = userinfoRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error","user not found"));
+        }
+        service.assignCamera(userOpt.get().getId(), cameraId);
+        return ResponseEntity.ok(Map.of("result","ok(get)"));
+    }
+
+    // src/main/java/com/sentry/sentry/camera/CameraController.java
+
+    @GetMapping("/assigned/ids")
+    public List<Long> assignedIds(@RequestParam Long userId) {
+        return service.listAssignedIds(userId);
+    }
+
+    @GetMapping("/assigned/ids/by-username")
+    public ResponseEntity<?> assignedIdsByUsername(@RequestParam String username) {
+        var userOpt = userinfoRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error","user not found"));
+        }
+        Long uid = userOpt.get().getId();
+        return ResponseEntity.ok(service.listAssignedIds(uid)); // ← [28,30,...] 형태
+    }
+
     /** 배치 요청 DTO (레코드) */
     public record AssignBatchReq(Long userId, java.util.List<Long> cameraIds) {}
 
