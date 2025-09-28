@@ -394,14 +394,7 @@ function InfoModal({ camera, onClose }) {
                     <div className="cam-read">{camera.isAnalisis ? "ON" : "OFF"}</div>
                 </div>
 
-                <div className="cam-divider" />
 
-                <div className="cam-section">
-                    <div className="cam-label">스트림 URL</div>
-                    <div className="cam-read" style={{ wordBreak: "break-all" }}>
-                        {camera.cctvurl}
-                    </div>
-                </div>
             </div>
         </div>
     );
