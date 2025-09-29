@@ -7,7 +7,7 @@ import {api} from "./lib/api.js";
 import sentryLogo from "./assets/sentryLogo.png";
 import axios from "axios";
 import CameraFeed from "./CameraFeed.jsx";
-import closeIcon from "./assets/close.png"; 
+import closeIcon from "./assets/close.png";
 
 const Home = () => {
     const KAKAO_MAP_API_KEY = import.meta.env.VITE_REACT_KAKAO_MAP_API_KEY;
