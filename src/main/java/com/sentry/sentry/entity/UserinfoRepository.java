@@ -10,4 +10,5 @@ public interface UserinfoRepository extends JpaRepository<Userinfo, Long> {
     boolean existsByUsername(String username);
     boolean existsByNickname(String nickname);
     boolean existsByNicknameAndIdNot(String nickname, Long id);
+//    Optional<CameraInfos> findByCctvUrl(String cctvUrl);
 }
