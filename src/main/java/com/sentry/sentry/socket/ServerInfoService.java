@@ -17,4 +17,8 @@ public class ServerInfoService {
     public List<ServerInfo> getAllServers() {
         return serverInfoRepository.findAll();
     }
+
+    public List<ServerInfo> getAllServersByServerType(String serverType){
+        return serverInfoRepository.getServerInfosByServerType(serverType);
+    }
 }

@@ -12,7 +12,7 @@ export default function AnalysisSettings() {
         (async () => {
             try {
                 // 백엔드 컨트롤러 /api/serverinfos
-                const res = await api("/api/serverinfos");
+                const res = await api("/api/serverinfos/Analysis");
                 if (res.ok) setServers(await res.json());
             } finally {
                 setLoading(false);
