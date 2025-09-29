@@ -35,7 +35,6 @@ export default function AnalysisSettings() {
                         <th style={{ padding: 8 }}>분석 서버 IP</th>
                         <th style={{ padding: 8 }}>포트</th>
                         <th style={{ padding: 8 }}>타입</th>
-                        <th style={{ padding: 8, textAlign: "right" }}>액션</th>
                     </tr>
                     </thead>
                     <tbody>
