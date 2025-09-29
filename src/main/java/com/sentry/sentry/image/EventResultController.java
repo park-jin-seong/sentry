@@ -1,12 +1,62 @@
 package com.sentry.sentry.image;
 
+import com.sentry.sentry.entity.EventResult;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.apache.tika.Tika;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/image")
 public class EventResultController {
+
     private final EventResultService eventResultService;
+    private final ImageService imageService;
+
+    @GetMapping("/list-by-criteria")
+    public List<EventResultDTO> getImagesByCriteria(
+            @RequestParam(required = false) List<Long> cameraIds,
+            @RequestParam(required = false) List<Long> classIds,
+            @RequestParam(required = false) LocalDateTime startDateTime,
+            @RequestParam(required = false) LocalDateTime endDateTime
+    ){
+        List<EventResult> eventResultList = eventResultService.getEventResultList(cameraIds, classIds, startDateTime, endDateTime);
+
+        List<EventResultDTO> allEventResultDTO = eventResultList.stream()
+                .map(EventResultDTO::new)
+                .collect(Collectors.toList());
+
+        System.out.println("allEventResultDTO = " + allEventResultDTO);
+        return allEventResultDTO;
+    }
+
+
+    @GetMapping("/stream/{eventResultId}")
+    public ResponseEntity<InputStreamResource> streamImage(@PathVariable Long eventResultId) {
+        Optional<InputStream> imageStreamOpt = imageService.getImageStreamFromSmb(eventResultId);
+
+        if (imageStreamOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        InputStream in = imageStreamOpt.get();
+        try {
+            Tika tika = new Tika();
+            String mimeType = tika.detect(in);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(mimeType))
+                    .body(new InputStreamResource(in));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

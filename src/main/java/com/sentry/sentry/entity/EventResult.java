@@ -1,10 +1,12 @@
 package com.sentry.sentry.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 @Table(name = "eventresult", catalog = "sentry_server")
 public class EventResult {
 

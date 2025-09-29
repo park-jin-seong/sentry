@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/chat/**", "/room/**").permitAll() // 테스트용
                         .requestMatchers("/api/accounts/create").hasAnyRole("MASTER","OWNER")
                         .requestMatchers("/api/cam/**").permitAll() // 테스트용(나중에 변겯하기)
+                        .requestMatchers("/api/image/**").permitAll() // 테스트용(나중에 변겯하기)
                         .requestMatchers("/ws/rtsp").permitAll() // 테스트용(나중에 변경하기)
                         .anyRequest().authenticated()
                 )
