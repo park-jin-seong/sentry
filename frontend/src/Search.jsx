@@ -6,21 +6,27 @@ import { api } from "./lib/api.js";
 import sentryLogo from "./assets/sentryLogo.png";
 import axios from "axios";
 
-const Home = () => {
+const classMap = {
+    '인물': 0,
+    '차량': 1
+};
+const Search = () => {
     const { me, loading } = useAuth();
     const [camList, setCamList] = useState([]);
+    const [eventResults, setEventResults] = useState([]);
     const navigate = useNavigate();
     const [cameraName, setCameraName] = useState('');
     const [startDateTime, setStartDateTime] = useState('');
     const [endDateTime, setEndDateTime] = useState('');
     const [selectedClass, setSelectedClass] = useState([]);
-    const [selectedCameraId, setSelectedCameraId] = useState(null);
+    const [selectedCameraIds, setSelectedCameraIds] = useState([]);
     const [timeError, setTimeError] = useState('');
 
     const isObserver = !!me?.roles?.includes?.("ROLE_OBSERVER");
 
     const onLogout = async () => {
         try {
+            // 이 부분은 인증 관련 로직이므로 api 객체를 사용합니다.
             await api("/api/auth/logout", { method: "POST" });
         } finally {
             api.clearAccessToken?.();
@@ -40,6 +46,7 @@ const Home = () => {
             }
             const timeoutId = setTimeout(async () => {
                 try {
+                    // 데이터 조회는 axios를 직접 사용합니다. (이전 오류 해결 경로)
                     const response = await axios.get(`/api/cam/list-byName?cameraName=${cameraName}`);
                     setCamList(response.data);
                 } catch (err) {
@@ -52,17 +59,30 @@ const Home = () => {
         getCamList();
     }, [me, loading, cameraName]);
 
-    const handleObjectClick = (objectType) => {
+    const handleObjectClick = (objectName) => {
+        const objectId = classMap[objectName];
+        if (objectId === undefined) return;
+
         setSelectedClass(prevSelected => {
-            if (prevSelected.includes(objectType)) {
-                return prevSelected.filter(item => item !== objectType);
+            if (prevSelected.includes(objectId)) {
+                return prevSelected.filter(item => item !== objectId);
             } else {
-                return [...prevSelected, objectType];
+                return [...prevSelected, objectId];
             }
         });
     };
 
-    const handleApplyClick = () => {
+    const handleCameraClick = (cameraId) => {
+        setSelectedCameraIds(prevSelected => {
+            if (prevSelected.includes(cameraId)) {
+                return prevSelected.filter(id => id !== cameraId);
+            } else {
+                return [...prevSelected, cameraId];
+            }
+        });
+    };
+
+    const handleApplyClick = async () => {
         if (startDateTime && endDateTime) {
             const start = new Date(startDateTime);
             const end = new Date(endDateTime);
@@ -72,13 +92,37 @@ const Home = () => {
                 return;
             }
         }
-
         setTimeError("");
 
-        console.log("선택된 카메라 ID:", selectedCameraId);
-        console.log("객체 선택:", selectedClass);
-        console.log("시작 시간:", startDateTime);
-        console.log("종료 시간:", endDateTime);
+        const params = new URLSearchParams();
+
+        selectedCameraIds.forEach(id => {
+            params.append('cameraIds', id);
+        });
+
+        selectedClass.forEach(id => {
+            params.append('classIds', id);
+        });
+
+        if (startDateTime) {
+            params.append('startDateTime', startDateTime);
+        }
+        if (endDateTime) {
+            params.append('endDateTime', endDateTime);
+        }
+
+        const url = `/api/image/list-by-criteria?${params.toString()}`;
+        console.log("생성된 API URL:", url);
+
+        try {
+            // 데이터 조회는 axios를 직접 사용합니다.
+            const response = await axios.get(url);
+            console.log("EventResult 목록:", response.data);
+            setEventResults(response.data);
+        } catch (err) {
+            console.error("API 호출 실패", err);
+            setEventResults([]);
+        }
     };
 
     return (
@@ -105,8 +149,8 @@ const Home = () => {
                         {camList.map((cam, index) => (
                             <li
                                 key={cam.cameraId || index}
-                                className={`sidebar-item ${selectedCameraId === cam.cameraId ? 'active' : ''}`}
-                                onClick={() => { setSelectedCameraId(cam.cameraId); console.log("카메라 id: ", cam.cameraId); }}
+                                className={`sidebar-item ${selectedCameraIds.includes(cam.cameraId) ? 'active' : ''}`}
+                                onClick={() => { handleCameraClick(cam.cameraId); }}
                             >
                                 {cam.cameraName}
                             </li>
@@ -116,8 +160,18 @@ const Home = () => {
                     <div className="filter-section">
                         <label className="filter-label">객체 선택</label>
                         <div className="filter-buttons">
-                            <button className={`filter-btn ${selectedClass.includes('차량') ? 'active' : ''}`} onClick={() => handleObjectClick('차량')}>차량</button>
-                            <button className={`filter-btn ${selectedClass.includes('인물') ? 'active' : ''}`} onClick={() => handleObjectClick('인물')}>인물</button>
+                            <button
+                                className={`filter-btn ${selectedClass.includes(classMap['차량']) ? 'active' : ''}`}
+                                onClick={() => handleObjectClick('차량')}
+                            >
+                                차량
+                            </button>
+                            <button
+                                className={`filter-btn ${selectedClass.includes(classMap['인물']) ? 'active' : ''}`}
+                                onClick={() => handleObjectClick('인물')}
+                            >
+                                인물
+                            </button>
                         </div>
                     </div>
                     <div className="date-time-section">
@@ -131,10 +185,38 @@ const Home = () => {
                         <button className="apply-btn" onClick={handleApplyClick}>적용</button>
                     </div>
                 </aside>
-                <main className="content-area"></main>
+                <main className="content-area">
+                    <div className="image-grid">
+                        {eventResults.length > 0 ? (
+                            eventResults.map((result) => (
+                                <div key={result.eventResultId} className="image-card">
+                                    <img
+                                        // 1. **SMBJ 스트리밍 API 엔드포인트로 변경**
+                                        src={`/api/image/stream/${result.eventResultId}`}
+                                        alt={`Thumbnail for event ${result.eventResultId}`}
+                                        className="thumbnail-img"
+                                        // 이미지가 로드되지 않을 경우 대비
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = "https://placehold.co/150x100/CCCCCC/333333?text=No+Image";
+                                        }}
+                                    />
+                                    <div className="image-info">
+                                        <p>시간: {new Date(result.eventOccurTime).toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        {`ID: ${result.eventResultId}`}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="no-results-message">검색 결과가 없습니다.</p>
+                        )}
+                    </div>
+                </main>
             </div>
         </div>
     );
 };
 
-export default Home;
+export default Search;

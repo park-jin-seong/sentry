@@ -4,6 +4,7 @@ import com.sentry.sentry.entity.EventResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -11,7 +12,11 @@ import java.util.List;
 public class EventResultService {
     private final EventResultRepository eventResultRepository;
 
-//    public List<EventResult> getEventResultList(){
-//
-//    }
+    public List<EventResult> getEventResultList(Long cameraId){
+        return eventResultRepository.findByCameraInfo_CameraId(cameraId);
+    }
+    public List<EventResult> getEventResultList(List<Long> cameraIds, List<Long> classIds, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return eventResultRepository.findBySearchCriteria(cameraIds, classIds, startDateTime, endDateTime);
+    }
+
 }
