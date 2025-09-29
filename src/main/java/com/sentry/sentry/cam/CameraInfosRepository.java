@@ -45,4 +45,16 @@ public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> 
         """, nativeQuery = true)
     int bulkAssignToServer(@Param("serverId") Integer serverId,
                            @Param("ids") Collection<Long> ids);
+
+    // 카메라 배정 해제
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+    UPDATE sentry_server.camerainfos
+       SET analysisServerId = NULL
+     WHERE cameraId IN (:ids)
+       AND (:serverId IS NULL OR analysisServerId = :serverId)
+    """, nativeQuery = true)
+    int bulkUnassignFromServer(@Param("serverId") Integer serverId,
+                               @Param("ids") Collection<Long> ids);
+
 }

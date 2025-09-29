@@ -1,4 +1,3 @@
-// src/panels/AnalysisSettings.jsx
 import { useEffect, useState } from "react";
 import { api } from "../lib/api.js";
 import "../Settings.css";
@@ -11,7 +10,7 @@ export default function AnalysisSettings() {
     useEffect(() => {
         (async () => {
             try {
-                // 백엔드 컨트롤러를 /api/serverinfos 로 맞춘 경우
+                // 백엔드 컨트롤러 /api/serverinfos
                 const res = await api("/api/serverinfos");
                 if (res.ok) setServers(await res.json());
             } finally {
@@ -101,24 +100,49 @@ function AssignCamerasModal({ server, onClose, onSaved }) {
     }, [server.serverId]);
 
     const toggle = (id) => setChecked(s => ({ ...s, [id]: !s[id] }));
-    const selectedIds = Object.entries(checked).filter(([,v]) => v).map(([k]) => Number(k));
 
     const save = async () => {
         if (saving) return;
         setSaving(true);
         setErr("");
+
         try {
-            const res = await api("/api/analysis/assign", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ serverId: server.serverId, cameraIds: selectedIds })
-            });
-            if (!res.ok) {
-                const t = await res.text().catch(() => "");
-                throw new Error(t || "저장 실패");
+            // 현재 선택된 카메라
+            const selectedIds = Object.entries(checked).filter(([,v]) => v).map(([k]) => Number(k));
+
+            // 원래 이 서버에 배정돼 있던 카메라
+            const prevAssignedIds = rows
+                .filter(c => Number(c.analysisServerId) === Number(server.serverId))
+                .map(c => c.cameraId);
+
+            // 추가된 카메라 (새로 체크됨)
+            const toAssign = selectedIds.filter(id => !prevAssignedIds.includes(id));
+            // 해제된 카메라 (체크 해제됨)
+            const toUnassign = prevAssignedIds.filter(id => !selectedIds.includes(id));
+
+            // 1) 배정 요청
+            if (toAssign.length > 0) {
+                const res = await api("/api/analysis/assign", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ serverId: server.serverId, cameraIds: toAssign })
+                });
+                if (!res.ok) throw new Error("배정 실패");
             }
-            alert(`총 ${selectedIds.length}개 카메라가 ${server.serverIp} 에 배정되었습니다.`);
+
+            // 2) 해제 요청
+            if (toUnassign.length > 0) {
+                const res = await api("/api/analysis/assign", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ serverId: server.serverId, cameraIds: toUnassign })
+                });
+                if (!res.ok) throw new Error("해제 실패");
+            }
+
+            alert(`✔ 배정 ${toAssign.length}건, 해제 ${toUnassign.length}건 완료`);
             onSaved?.();
+
         } catch (e) {
             setErr(e.message || "저장 실패");
         } finally {
