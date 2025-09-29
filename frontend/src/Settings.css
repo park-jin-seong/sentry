@@ -159,6 +159,7 @@
     overflow: auto;
 }
 
+
 /* =========================================================
    2) Form & Buttons
    ========================================================= */
@@ -725,3 +726,41 @@
     text-overflow: ellipsis;
     font-weight: 600;
 }
+
+/* =========================================================
+   칩 리스트를 3개 높이까지만 보이게 하고 스크롤
+   ========================================================= */
+.account-list-scroll {
+    max-height: 300px; /* 필요시 조절 */
+    overflow-y: auto;
+    border-radius: 12px;
+}
+
+/* 칩 3개까지만 보이고 스크롤 */
+.chip-scroll-3 {
+    --chip-h: 48px;
+    max-height: calc(var(--chip-h) * 3 + 20px);
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+/* 공통 스크롤바 톤 */
+.account-list-scroll::-webkit-scrollbar,
+.chip-scroll-3::-webkit-scrollbar {
+    width: 8px;
+}
+
+.account-list-scroll::-webkit-scrollbar-thumb,
+.chip-scroll-3::-webkit-scrollbar-thumb {
+    background: #7B7B7B;
+    border-radius: 8px;
+}
+
+.account-list-scroll::-webkit-scrollbar-track,
+.chip-scroll-3::-webkit-scrollbar-track {
+    background: #3D434D;
+}
+
+
+
+
