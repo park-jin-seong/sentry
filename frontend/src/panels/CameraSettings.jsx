@@ -33,7 +33,6 @@ export default function CameraSettings() {
             setItems(
                 rows.map((d) => {
                     const ownerUserId = d.ownerUserId ?? null;
-                    // 서버가 isOwner를 주면 그대로 사용, 아니면 ownerUserId 비교
                     const isOwner =
                         typeof d.isOwner === "boolean" ? d.isOwner : ownerUserId === USER_ID;
 
@@ -72,7 +71,6 @@ export default function CameraSettings() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [USER_ID]);
 
-    // 최초 진입 시: me.id가 준비되면 로드
     useEffect(() => {
         if (!authLoading && api.peekAccessToken() && USER_ID) {
             loadAll();
@@ -80,7 +78,7 @@ export default function CameraSettings() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, USER_ID]);
 
-    /** ITS 검색에서 선택 → 추가 (백엔드: POST /api/cam/add) */
+    /** 단건 추가 (기존 유지) */
     const addBySelection = async (selected) => {
         if (!api.peekAccessToken()) {
             alert("로그인 후 사용하세요.");
@@ -102,17 +100,43 @@ export default function CameraSettings() {
                 const ejson = await r.json().catch(() => null);
                 throw new Error(ejson?.message || "카메라 저장 실패");
             }
-            await loadAll();
-            setShowAdd(false);
         } catch (e) {
-            alert(e.message || "추가 실패");
+            throw e;
         }
+    };
+
+    /** 다중 추가 (새로 추가) */
+    const addBySelections = async (selectedList) => {
+        if (!api.peekAccessToken()) {
+            alert("로그인 후 사용하세요.");
+            return;
+        }
+        // 순차 저장(중간 실패 메시지 보기 쉬움) — 원하면 Promise.allSettled로 병렬도 가능
+        const results = [];
+        for (const sel of selectedList) {
+            try {
+                await addBySelection(sel);
+                results.push({ ok: true, name: sel.name });
+            } catch (e) {
+                results.push({ ok: false, name: sel.name, msg: e.message || "저장 실패" });
+            }
+        }
+        // 요약 알림
+        const okCount = results.filter(r => r.ok).length;
+        const fail = results.filter(r => !r.ok);
+        if (fail.length) {
+            alert(`총 ${selectedList.length}개 중 ${okCount}개 저장됨\n실패: ${fail.map(f => `${f.name}(${f.msg})`).join(", ")}`);
+        } else {
+            alert(`총 ${okCount}개 저장 완료`);
+        }
+        await loadAll();
+        setShowAdd(false);
     };
 
     /** 수정 모달 띄우기 (오너만) */
     const onEdit = (it) => setEditing(it);
 
-    /** 삭제 (오너면 하드삭제 / 비오너면 내 매핑만 해제는 백엔드 로직에 따름) */
+    /** 삭제 (오너면 하드삭제 / 비오너면 매핑 해제는 백엔드 로직에 따름) */
     const onDelete = async (cameraId) => {
         if (!api.peekAccessToken()) {
             alert("로그인 후 사용하세요.");
@@ -120,7 +144,6 @@ export default function CameraSettings() {
         }
         if (!window.confirm("정말 삭제할까요?")) return;
         try {
-            // ✅ 실제 동작하는 엔드포인트에 맞춰 호출 (CameraController의 /api/camera)
             const r = await api(`/api/camera/${cameraId}?userId=${USER_ID}`, {
                 method: "DELETE",
             });
@@ -141,14 +164,14 @@ export default function CameraSettings() {
                             카메라 추가와 수정 및 삭제가 가능합니다.
                         </div>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-                        추가
-                    </button>
                 </div>
 
                 <div className="camera-table">
                     <div className="camera-row camera-row-head">
                         <div className="col-name">카메라명</div>
+                        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+                            추가
+                        </button>
                         <div className="col-actions" />
                     </div>
 
@@ -172,8 +195,8 @@ export default function CameraSettings() {
                                                 className="tag"
                                                 style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}
                                             >
-                        (업로더: {it.ownerName || it.ownerUserId || "알 수 없음"})
-                      </span>
+                                                (업로더: {it.ownerName || it.ownerUserId || "알 수 없음"})
+                                            </span>
                                         )}
                                     </div>
                                     <div className="col-actions" style={{ display: "flex", gap: 8 }}>
@@ -202,7 +225,11 @@ export default function CameraSettings() {
             </div>
 
             {showAdd && (
-                <AddCameraModal onClose={() => setShowAdd(false)} onPick={addBySelection} />
+                <AddCameraModal
+                    onClose={() => setShowAdd(false)}
+                    onPick={addBySelection}         // 단건(더블클릭/빠른추가 용)
+                    onPickMany={addBySelections}    // 다중 선택 저장
+                />
             )}
 
             {editing && (
@@ -247,7 +274,6 @@ function EditCameraModal({ camera, onClose, onSaved }) {
 
         try {
             setSaving(true);
-            // ✅ CameraController의 PATCH 엔드포인트 사용
             const r = await api(`/api/camera/${camera.id}?userId=${camera.ownerUserId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -393,15 +419,13 @@ function InfoModal({ camera, onClose }) {
                     <div className="cam-label">분석 상태</div>
                     <div className="cam-read">{camera.isAnalisis ? "ON" : "OFF"}</div>
                 </div>
-
-
             </div>
         </div>
     );
 }
 
-/** ====== ITS 검색 모달 ====== */
-function AddCameraModal({ onClose, onPick }) {
+/** ====== ITS 검색 모달 (다중 선택 지원) ====== */
+function AddCameraModal({ onClose, onPick, onPickMany }) {
     const [roadType, setRoadType] = useState("its");
     const [minX, setMinX] = useState("126");
     const [maxX, setMaxX] = useState("127");
@@ -411,6 +435,10 @@ function AddCameraModal({ onClose, onPick }) {
     const [loading, setLoading] = useState(false);
     const [list, setList] = useState([]);
     const [err, setErr] = useState("");
+
+    // 다중 선택 상태: { id: true }
+    const [selected, setSelected] = useState({});
+    const selectedCount = Object.values(selected).filter(Boolean).length;
 
     useEffect(() => {
         const onKey = (e) => e.key === "Escape" && onClose();
@@ -422,6 +450,7 @@ function AddCameraModal({ onClose, onPick }) {
         setLoading(true);
         setErr("");
         setList([]);
+        setSelected({});
         try {
             const qs = new URLSearchParams({
                 type: roadType,
@@ -451,6 +480,37 @@ function AddCameraModal({ onClose, onPick }) {
             setErr(e.message || "검색 오류");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggle = (row) => {
+        setSelected((s) => ({ ...s, [row.id]: !s[row.id] }));
+    };
+
+    const addSelectedAll = async () => {
+        const picks = list
+            .filter((row) => selected[row.id])
+            .map((row) => ({
+                name: row.name,
+                lat: toNum(row.coordy, 0),
+                lon: toNum(row.coordx, 0),
+                cctvurl: row.cctvurl,
+                cctvformat: row.cctvformat,
+            }));
+
+        if (picks.length === 0) {
+            alert("추가할 항목을 선택해 주세요.");
+            return;
+        }
+
+        if (onPickMany) {
+            await onPickMany(picks);
+        } else {
+            // (호환) onPick만 넘어온 경우에도 최소 동작 보장
+            for (const p of picks) {
+                await onPick(p);
+            }
+            onClose();
         }
     };
 
@@ -539,6 +599,19 @@ function AddCameraModal({ onClose, onPick }) {
                         <div className="settings-hint" style={{ marginTop: 8, opacity: 0.7, fontSize: 12 }}>
                             동일 범위에서 고속/국도가 겹칠 수 있습니다. 범위를 좁혀 비교해 보세요.
                         </div>
+
+                        {/* 선택 개수 + 추가 버튼 */}
+                        <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                            <div className="st-label">선택: <b>{selectedCount}</b> 개</div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={addSelectedAll}
+                                disabled={loading || selectedCount === 0}
+                                title={selectedCount === 0 ? "항목을 선택하세요" : "선택된 항목 모두 추가"}
+                            >
+                                선택 추가
+                            </button>
+                        </div>
                     </aside>
 
                     <section className="add-right">
@@ -548,25 +621,41 @@ function AddCameraModal({ onClose, onPick }) {
                         )}
                         {!loading && list.length > 0 && (
                             <ul className="result-list">
-                                {list.map((it, i) => (
-                                    <li
-                                        key={it.id ?? i}
-                                        className="result-item"
-                                        onClick={() =>
-                                            onPick({
-                                                name: it.name,
-                                                lat: toNum(it.coordy, 0),
-                                                lon: toNum(it.coordx, 0),
-                                                cctvurl: it.cctvurl,
-                                                cctvformat: it.cctvformat,
-                                            })
-                                        }
-                                        title="클릭하면 추가됩니다"
-                                    >
-                                        <span className="idx">{String(i + 1).padStart(2, "0")}.</span>{" "}
-                                        <span className="nm">{it.name}</span>
-                                    </li>
-                                ))}
+                                {list.map((it, i) => {
+                                    const isSel = !!selected[it.id];
+                                    return (
+                                        <li
+                                            key={it.id ?? i}
+                                            className="result-item"
+                                            onClick={() => toggle(it)}             // 클릭으로 토글(다중선택)
+                                            onDoubleClick={() =>                   // 더블클릭: 단건 바로 추가(빠른 동작)
+                                                onPick?.({
+                                                    name: it.name,
+                                                    lat: toNum(it.coordy, 0),
+                                                    lon: toNum(it.coordx, 0),
+                                                    cctvurl: it.cctvurl,
+                                                    cctvformat: it.cctvformat,
+                                                }).then(() => {
+                                                    // 단건 추가 후 리스트에서 체크 해제(선택 흐름 깔끔)
+                                                    setSelected(s => ({ ...s, [it.id]: false }));
+                                                }).catch((e) => {
+                                                    alert(e?.message || "추가 실패");
+                                                })
+                                            }
+                                            title={isSel ? "선택됨 (클릭하여 해제) / 더블클릭: 바로 추가" : "클릭하여 선택 / 더블클릭: 바로 추가"}
+                                            style={{
+                                                background: isSel ? "rgba(32,117,144,.35)" : undefined,
+                                                borderRadius: 8
+                                            }}
+                                        >
+                                            <span className="idx">{String(i + 1).padStart(2, "0")}.</span>{" "}
+                                            <span className="nm">{it.name}</span>
+                                            <span style={{ marginLeft: "auto", opacity: .8 }}>
+                                                {isSel ? "✓" : ""}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
                     </section>
