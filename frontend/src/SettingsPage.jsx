@@ -64,7 +64,7 @@ export default function SettingsPage() {
             <button
                 key={tab.key}
                 className={
-                    `sidebar-item ${selected ? "is-active" : ""} ${disabled ? "is-disabled" : ""}`
+                    `sidebar-list ${selected ? "is-active" : ""} ${disabled ? "is-disabled" : ""}`
                 }
                 onClick={() => {
                     if (!disabled) setActive(tab.key);

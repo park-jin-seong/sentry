@@ -1,36 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+// src/panels/MyAccount.jsx
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import "../Settings.css";
-import { useAuth } from "../auth.jsx";
 
 import eyeIcon from "../assets/eye.png";
 import hideIcon from "../assets/hide.png";
 
-function fmt(tsSec) {
-    if (!tsSec) return "-";
-    const d = new Date(tsSec * 1000);
-    return d.toLocaleString();
-}
-
-function decodeJwtLocal(token) {
-    try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const json = decodeURIComponent(
-            atob(base64)
-                .split("")
-                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-                .join("")
-        );
-        return JSON.parse(json);
-    } catch {
-        return null;
-    }
-}
-
 export default function MyAccount() {
-    const { reload } = useAuth();
     const navigate = useNavigate();
 
     const [saving, setSaving] = useState(false);
@@ -41,17 +18,7 @@ export default function MyAccount() {
         showPw: false,
     });
 
-    const [tokVer, setTokVer] = useState(0);
-    const [showToken, setShowToken] = useState(false);
-    const [refreshBusy, setRefreshBusy] = useState(false);
-
-    const token = useMemo(() => api.peekAccessToken?.(), [tokVer]);
-    const decode = api.decodeJwtPayload || decodeJwtLocal;
-    const payload = useMemo(() => (token ? decode(token) : null), [token]);
-
-    const nowSec = Math.floor(Date.now() / 1000);
-    const expLeft = payload?.exp ? Math.max(payload.exp - nowSec, 0) : null;
-
+    // 프로필 로드
     useEffect(() => {
         let mounted = true;
         (async () => {
@@ -68,11 +35,11 @@ export default function MyAccount() {
                     username: me?.username ?? "",
                     nickname: me?.nickname ?? me?.username ?? "",
                 }));
-            } catch {}
+            } catch {
+                // noop
+            }
         })();
-        return () => {
-            mounted = false;
-        };
+        return () => { mounted = false; };
     }, [navigate]);
 
     const onChange = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
@@ -100,42 +67,6 @@ export default function MyAccount() {
             setForm((s) => ({ ...s, userpassword: "" }));
         } finally {
             setSaving(false);
-        }
-    };
-
-    const logToken = () => {
-        const t = api.peekAccessToken?.();
-        console.log("[MyAccount] accessToken:", t || "<none>");
-        if (t) console.log("[MyAccount] payload:", decode(t));
-    };
-
-    const onRefreshToken = async () => {
-        if (refreshBusy) return;
-        setRefreshBusy(true);
-        try {
-            if (api.refreshNow) {
-                const newT = await api.refreshNow();
-                console.log("[MyAccount] refreshed (helper):", newT?.slice(0, 20) + "…");
-            } else {
-                const r = await fetch("/api/auth/refresh", {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                });
-                if (!r.ok) throw new Error("refresh failed");
-                const data = await r.json().catch(() => ({}));
-                if (!data?.accessToken) throw new Error("no accessToken in refresh");
-                api.setAccessToken?.(data.accessToken);
-                console.log("[MyAccount] refreshed (manual):", data.accessToken.slice(0, 20) + "…");
-            }
-            setTokVer((v) => v + 1);
-            alert("토큰이 갱신되었습니다.");
-        } catch (e) {
-            console.error(e);
-            alert("리프레시 실패. 다시 로그인해주세요.");
-            navigate("/login", { replace: true });
-        } finally {
-            setRefreshBusy(false);
         }
     };
 
@@ -180,45 +111,6 @@ export default function MyAccount() {
                         {saving ? "변경 중..." : "변경하기"}
                     </button>
                 </form>
-            </div>
-
-            {/* 토큰 카드 */}
-            <div className="st-card">
-                <h3 className="st-h3">토큰</h3>
-
-                <ul style={{ margin: "0 0 12px 0", paddingLeft: 16 }}>
-                    <li>보유 여부: <b>{token ? "있음" : "없음"}</b></li>
-                    <li>토큰 앞자리: {token ? token.slice(0, 20) + "…" : "-"}</li>
-                    <li>발급(iat): {fmt(payload?.iat)}</li>
-                    <li>만료(exp): {fmt(payload?.exp)}</li>
-                    <li>남은 시간: {expLeft != null ? `${expLeft}s` : "-"}</li>
-                    <li>roles: {payload?.roles ? JSON.stringify(payload.roles) : "-"}</li>
-                    <li>subject(sub): {payload?.sub ?? "-"}</li>
-                    <li>issuer(iss): {payload?.iss ?? "-"}</li>
-                </ul>
-
-                <div style={{ display: "grid", gap: 8 }}>
-                    {showToken && (
-                        <textarea
-                            className="st-input"
-                            readOnly
-                            value={token || ""}
-                            rows={4}
-                            style={{ fontFamily: "monospace" }}
-                        />
-                    )}
-                    <div style={{ display: "flex", gap: 8 }}>
-                        <button className="st-primary" type="button" onClick={() => setShowToken((s) => !s)}>
-                            {showToken ? "토큰 숨기기" : "토큰 보기"}
-                        </button>
-                        <button className="st-primary" type="button" onClick={onRefreshToken} disabled={refreshBusy}>
-                            {refreshBusy ? "리프레시 중..." : "수동 리프레시"}
-                        </button>
-                        <button className="st-primary" type="button" onClick={logToken}>
-                            콘솔로 보기
-                        </button>
-                    </div>
-                </div>
             </div>
         </section>
     );

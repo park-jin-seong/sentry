@@ -62,7 +62,7 @@
     border-radius: 1px;
 }
 
-.sidebar-item {
+.sidebar-list {
     appearance: none;
     border: 0;
     background: transparent;
@@ -74,17 +74,17 @@
     cursor: pointer;
 }
 
-.sidebar-item:hover {
+.sidebar-list:hover {
     background: #ffffff18;
     opacity: 1;
 }
 
-.sidebar-item.is-active {
+.sidebar-list.is-active {
     background: #ffffff18;
     font-weight: 600;
 }
 
-.sidebar-item.is-disabled {
+.sidebar-list.is-disabled {
     opacity: .45;
     cursor: not-allowed;
     pointer-events: none;
@@ -270,7 +270,7 @@
 }
 
 .btn-danger {
-    background: #b91c1c;
+    background: #6B737E;
     color: #fff;
 }
 
