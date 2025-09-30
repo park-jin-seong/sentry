@@ -38,4 +38,5 @@ public class CameraInfos {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "analysisServerId")
     private ServerInfo analysisServer;
+
 }
