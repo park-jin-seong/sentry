@@ -115,7 +115,7 @@ body {
 
 /* 사이드바: 필요 시에만 자체 스크롤 */
 .sidebar {
-    width: 250px;
+    width: 300px; /* 원래 250 */
     background-color: #333;
     padding: 20px 0;
     border-right: 1px solid #444;
