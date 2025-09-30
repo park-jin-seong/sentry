@@ -85,7 +85,13 @@ const Home = () => {
         <div className="app-container">
             <header className="top-bar">
                 <div className="logo-container">
-                    <img src={sentryLogo} alt="SENTRY" className="logo-img" />
+                    <img
+                        src={sentryLogo}
+                        alt="SENTRY Logo"
+                        className="logo-img"
+                        onClick={() => navigate("/home")}
+                        style={{ cursor: "pointer" }}
+                    />
                 </div>
                 <nav className="nav-menu">
                     <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>
