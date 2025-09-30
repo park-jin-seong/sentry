@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
@@ -69,27 +68,6 @@ public class AnalysisAssignController {
             return Map.of("error", "serverId/cameraIds required");
         }
         int updated = service.assignCamerasToServer(req.serverId, req.cameraIds);
-
-//        List<ServerInfo> serverInfo = serverInfoService.getAllServersByServerType("Analysis");
-//
-//        String serverIp = "";
-//        int port = 0;
-//
-//        for (ServerInfo server : serverInfo) {
-//            if (server.getServerId().intValue() == req.serverId) {
-//                serverIp = server.getServerIp();
-//                port = server.getServerPort();
-//                break;
-//            }
-//
-//        }
-//        if (serverIp.isBlank() || port <= 0) {
-//            return Map.of("error", "invalid server ip/port");
-//        }
-//
-//        System.out.println("serverIp: " + serverIp + " port: " + port);
-//
-//        SendNotice(serverIp,port,"restart");
         return Map.of("updated", updated);
     }
 
