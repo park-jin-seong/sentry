@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface EventResultRepository extends JpaRepository<EventResult, Long>, CustomEventResultRepository {
     List<EventResult> findByCameraInfo_CameraId(Long cameraId);
+
 }

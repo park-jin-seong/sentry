@@ -98,7 +98,7 @@ const Home = () => {
         <div className="app-container">
             <header className="top-bar">
                 <div className="logo-container">
-                    <img src={sentryLogo} alt="SENTRY" className="logo-img" />
+                    <img src={sentryLogo} alt="SENTRY" className="logo-img" onClick={() => window.location.reload()}/>
                 </div>
 
                 <nav className="nav-menu">

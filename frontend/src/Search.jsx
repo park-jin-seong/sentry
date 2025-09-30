@@ -115,7 +115,6 @@ const Search = () => {
         console.log("생성된 API URL:", url);
 
         try {
-            // 데이터 조회는 axios를 직접 사용합니다.
             const response = await axios.get(url);
             console.log("EventResult 목록:", response.data);
             setEventResults(response.data);
@@ -129,7 +128,7 @@ const Search = () => {
         <div className="app-container">
             <header className="top-bar">
                 <div className="logo-container">
-                    <img src={sentryLogo} alt="SENTRY" className="logo-img" />
+                    <img src={sentryLogo} alt="SENTRY" className="logo-img" onClick={() => navigate('/home')}/>
                 </div>
                 <nav className="nav-menu">
                     <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>
@@ -191,11 +190,9 @@ const Search = () => {
                             eventResults.map((result) => (
                                 <div key={result.eventResultId} className="image-card">
                                     <img
-                                        // 1. **SMBJ 스트리밍 API 엔드포인트로 변경**
                                         src={`/api/image/stream/${result.eventResultId}`}
                                         alt={`Thumbnail for event ${result.eventResultId}`}
                                         className="thumbnail-img"
-                                        // 이미지가 로드되지 않을 경우 대비
                                         onError={(e) => {
                                             e.target.onerror = null;
                                             e.target.src = "https://placehold.co/150x100/CCCCCC/333333?text=No+Image";

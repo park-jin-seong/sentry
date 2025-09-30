@@ -3,6 +3,7 @@ package com.sentry.sentry.image;
 import com.sentry.sentry.entity.EventResult;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,18 +43,21 @@ public class EventResultController {
 
     @GetMapping("/stream/{eventResultId}")
     public ResponseEntity<InputStreamResource> streamImage(@PathVariable Long eventResultId) {
-        Optional<InputStream> imageStreamOpt = imageService.getImageStreamFromSmb(eventResultId);
+        Optional<ByteArrayResource> imageOpt  = imageService.getImageStreamFromSmb(eventResultId);
 
-        if (imageStreamOpt.isEmpty()) {
+        if (imageOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        InputStream in = imageStreamOpt.get();
-        try {
+
+        ByteArrayResource resource = imageOpt.get();
+
+        try (InputStream in = resource.getInputStream()) {
             Tika tika = new Tika();
             String mimeType = tika.detect(in);
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
-                    .body(new InputStreamResource(in));
+                    .body(new InputStreamResource(resource.getInputStream()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();

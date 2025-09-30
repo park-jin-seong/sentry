@@ -39,6 +39,9 @@ body {
     display: block;
     object-fit: contain;
 }
+.logo-img:hover{
+    cursor:pointer;
+}
 
 .nav-menu{
     position: relative;

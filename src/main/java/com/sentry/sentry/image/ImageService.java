@@ -12,8 +12,10 @@ import com.hierynomus.smbj.share.File;
 import com.sentry.sentry.entity.EventResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -33,7 +35,7 @@ public class ImageService {
     @Value("${smb.domain:}")
     private String smbDomain;
 
-    public Optional<InputStream> getImageStreamFromSmb(Long eventResultId) {
+    public Optional<ByteArrayResource> getImageStreamFromSmb(Long eventResultId) {
         Optional<EventResult> eventResultOpt = eventResultRepository.findById(eventResultId);
 
         if (eventResultOpt.isEmpty()) {
@@ -51,10 +53,8 @@ public class ImageService {
 
         try (SMBClient client = new SMBClient();
              Connection connection = client.connect(host);
-
-             Session session = connection.authenticate(new AuthenticationContext("keduit", "123$".toCharArray(), null))) {
-
-            DiskShare disk = (DiskShare) session.connectShare(shareName);
+             Session session = connection.authenticate(new AuthenticationContext("keduit", "123$".toCharArray(), ""));
+             DiskShare disk = (DiskShare) session.connectShare(shareName)) {
 
             if (!disk.fileExists(filePath)) {
                 return Optional.empty();
@@ -66,10 +66,15 @@ public class ImageService {
                     EnumSet.noneOf(com.hierynomus.msfscc.FileAttributes.class),
                     EnumSet.of(SMB2ShareAccess.FILE_SHARE_READ),
                     SMB2CreateDisposition.FILE_OPEN,
-                    null);
+                    null
+            );
 
-            InputStream inputStream = smbFile.getInputStream();
-            return Optional.of(inputStream);
+            try (InputStream in = smbFile.getInputStream();
+                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                in.transferTo(baos);
+                return Optional.of(new ByteArrayResource(baos.toByteArray()));
+            }
+
         } catch (Exception e) {
             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>" + e.getMessage());
             return Optional.empty();
