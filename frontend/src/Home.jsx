@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from "react";
 import "./Home.css";
 import Chat from "./Chat";
-import {useNavigate} from "react-router-dom";
+import {NavLink, useNavigate} from "react-router-dom";
 import {useAuth} from "./auth.jsx";
 import {api} from "./lib/api.js";
 import sentryLogo from "./assets/sentryLogo.png";
@@ -102,36 +102,33 @@ const Home = () => {
 
     return (
         <div className="app-container">
-            <header className="top-bar">
-                <div className="logo-container">
-                    <img src={sentryLogo} alt="SENTRY" className="logo-img"/>
-                </div>
+            {/*<header className="top-bar">*/}
+            {/*    <div className="logo-container">*/}
+            {/*        <img src={sentryLogo} alt="SENTRY" className="logo-img"/>*/}
+            {/*    </div>*/}
 
-                <nav className="nav-menu">
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            navigate("/search");
-                        }}
-                    >
-                        검색
-                    </a>
-                    <a href="#" className="nav-item">도움말</a>
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            navigate(isObserver ? "/settings?tab=chat" : "/settings");
-                        }}
-                    >
-                        {isObserver ? "채팅 설정" : "설정"}
-                    </a>
-                    <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>
-                </nav>
-            </header>
+            {/*    <nav className="nav-menu">*/}
+            {/*        <NavLink*/}
+            {/*            to="/search"*/}
+            {/*            className={({isActive}) => `nav-item ${isActive ? "active" : ""}`}*/}
+            {/*        >*/}
+            {/*            검색*/}
+            {/*        </NavLink>*/}
+            {/*        <NavLink*/}
+            {/*            to="/help"*/}
+            {/*            className={({isActive}) => `nav-item ${isActive ? "active" : ""}`}*/}
+            {/*        >*/}
+            {/*            도움말*/}
+            {/*        </NavLink>*/}
+            {/*        <NavLink*/}
+            {/*            to={isObserver ? "/settings?tab=chat" : "/settings"}*/}
+            {/*            className={({isActive}) => `nav-item ${isActive ? "active" : ""}`}*/}
+            {/*        >*/}
+            {/*            {isObserver ? "채팅 설정" : "설정"}*/}
+            {/*        </NavLink>*/}
+            {/*        <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>*/}
+            {/*    </nav>*/}
+            {/*</header>*/}
 
             <div className="main-content">
                 <aside className="sidebar">

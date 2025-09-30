@@ -83,23 +83,23 @@ const Home = () => {
 
     return (
         <div className="app-container">
-            <header className="top-bar">
-                <div className="logo-container">
-                    <img
-                        src={sentryLogo}
-                        alt="SENTRY Logo"
-                        className="logo-img"
-                        onClick={() => navigate("/home")}
-                        style={{ cursor: "pointer" }}
-                    />
-                </div>
-                <nav className="nav-menu">
-                    <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>
-                    <a href="#" className="nav-item">도움말</a>
-                    <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate(isObserver ? "/settings?tab=chat" : "/settings"); }}>{isObserver ? "채팅 설정" : "설정"}</a>
-                    <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>
-                </nav>
-            </header>
+            {/*<header className="top-bar">*/}
+            {/*    <div className="logo-container">*/}
+            {/*        <img*/}
+            {/*            src={sentryLogo}*/}
+            {/*            alt="SENTRY Logo"*/}
+            {/*            className="logo-img"*/}
+            {/*            onClick={() => navigate("/home")}*/}
+            {/*            style={{ cursor: "pointer" }}*/}
+            {/*        />*/}
+            {/*    </div>*/}
+            {/*    <nav className="nav-menu">*/}
+            {/*        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>*/}
+            {/*        <a href="#" className="nav-item">도움말</a>*/}
+            {/*        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate(isObserver ? "/settings?tab=chat" : "/settings"); }}>{isObserver ? "채팅 설정" : "설정"}</a>*/}
+            {/*        <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>*/}
+            {/*    </nav>*/}
+            {/*</header>*/}
 
             <div className="main-content">
                 <aside className="sidebar">
