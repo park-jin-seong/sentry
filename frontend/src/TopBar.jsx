@@ -33,6 +33,13 @@ export default function TopBar() {
 
             <nav className="nav-menu">
                 <NavLink
+                    to="/home"
+                    className={({isActive}) => `nav-item ${isActive ? "active" : ""}`}
+                >
+                    관제
+                </NavLink>
+
+                <NavLink
                     to="/search"
                     className={({isActive}) => `nav-item ${isActive ? "active" : ""}`}
                 >
