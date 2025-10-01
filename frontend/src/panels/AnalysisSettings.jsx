@@ -133,27 +133,60 @@ function AssignCamerasModal({ server, onClose, onSaved }) {
             const toAssign = selectedIds.filter((id) => !prevAssignedIds.includes(id));
             const toUnassign = prevAssignedIds.filter((id) => !selectedIds.includes(id));
 
-            // 1) 배정 요청
+            // 변경 없으면 바로 종료
+            if (toAssign.length === 0 && toUnassign.length === 0) {
+                alert("변경 사항이 없습니다.");
+                onSaved?.();
+                return;
+            }
+
+            // 1) 배정
             if (toAssign.length > 0) {
                 const res = await api("/api/analysis/assign", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ serverId: server.serverId, cameraIds: toAssign }),
                 });
-                if (!res.ok) throw new Error("배정 실패");
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data?.error || "배정 실패");
+                }
             }
 
-            // 2) 해제 요청
+            // 2) 해제
             if (toUnassign.length > 0) {
                 const res = await api("/api/analysis/assign", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ serverId: server.serverId, cameraIds: toUnassign }),
                 });
-                if (!res.ok) throw new Error("해제 실패");
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data?.error || "해제 실패");
+                }
             }
 
-            alert(`✔ 배정 ${toAssign.length}건, 해제 ${toUnassign.length}건 완료`);
+            // 3) 둘 다 성공한 뒤에 한 번만 서버 재시작 체크
+            const scRes = await api("/api/analysis/serverCheck", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ serverId: server.serverId }),
+            });
+
+            const scData = await scRes.json().catch(() => ({}));
+            if (!scRes.ok) {
+                throw new Error(scData?.error || "serverCheck 호출 실패");
+            }
+
+            const restart = !!scData.restart;
+            const ip = scData.serverIp ?? "(unknown)";
+            const port = scData.port ?? "(unknown)";
+
+            alert(
+                `배정 ${toAssign.length}건, 해제 ${toUnassign.length}건 완료\n` +
+                `서버 재시작 신호: ${restart ? "성공" : "실패"} (ip: ${ip}, port: ${port})`
+            );
+
             onSaved?.();
         } catch (e) {
             setErr(e.message || "저장 실패");
@@ -161,6 +194,8 @@ function AssignCamerasModal({ server, onClose, onSaved }) {
             setSaving(false);
         }
     };
+
+
 
     const stop = (e) => e.stopPropagation();
 

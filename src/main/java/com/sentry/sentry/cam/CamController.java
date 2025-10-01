@@ -47,7 +47,6 @@ public class CamController {
 //    }
 
 
-
     @GetMapping("/list-byUserId")
     public List<CameraInfosDTO> getAllCameraInfos(@RequestParam Long userId) {
         List<Long> camIdList = camService.getCam(userId);

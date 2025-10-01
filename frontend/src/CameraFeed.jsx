@@ -1,17 +1,17 @@
-import { useEffect, useRef } from "react";
+import {useEffect, useRef, useState} from "react";
 
-import { useAuth } from "./auth.jsx";
-
+import {useAuth} from "./auth.jsx";
 
 
 const CameraFeed = () => {
 
     const imgRef = useRef(null);
 
-    const { me, loading } = useAuth();
+    const {me, loading} = useAuth();
 
     const wsRef = useRef(null);
 
+    const [focusedArea, setFocusedArea] = useState(null);
 
 
     useEffect(() => {
@@ -21,11 +21,9 @@ const CameraFeed = () => {
         if (wsRef.current) return; // 이미 연결되어 있으면 재생성 방지
 
 
-
         const ws = new WebSocket("ws://localhost:8080/ws/rtsp");
 
         wsRef.current = ws;
-
 
 
         ws.onopen = () => {
@@ -35,7 +33,6 @@ const CameraFeed = () => {
             console.log("WebSocket connected");
 
         };
-
 
 
         ws.onmessage = (event) => {
@@ -51,11 +48,9 @@ const CameraFeed = () => {
         };
 
 
-
         ws.onclose = () => console.log("WebSocket closed");
 
         ws.onerror = (e) => console.log("WebSocket error", e);
-
 
 
         return () => {
@@ -67,15 +62,53 @@ const CameraFeed = () => {
     }, [me]);
 
 
+    const handleDoubleClick = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-    return <img ref={imgRef} id="videoFrame0" alt="camera feed" style={{ width: "100%", height: "100%" }} />;
+        const nx = x / rect.width;
+        const ny = y / rect.height;
 
+        const col = Math.min(2, Math.max(0, Math.floor(nx * 3)));
+        const row = Math.min(2, Math.max(0, Math.floor(ny * 3)));
+
+        console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
+        setFocusedArea({row, col});
+    };
+
+    const resetZoom = () => setFocusedArea(null);
+
+    return (
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                background: "#000",
+            }}
+        >
+            <img
+                ref={imgRef}
+                id="videoFrame0"
+                alt="camera feed"
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transition: "transform 0.3s ease",
+                    transform: focusedArea
+                        ? `scale(3) translate(-${focusedArea.col * (100 / 3)}%, -${focusedArea.row * (100 / 3)}%)`
+                        : "scale(1)",
+                    transformOrigin: "top left",
+                    cursor: "pointer",
+                }}
+                onDoubleClick={focusedArea ? resetZoom : handleDoubleClick}
+            />
+        </div>
+    );
 };
-
-
-
 export default CameraFeed;
-
 
 
 // import { useEffect, useRef, useState } from "react"; // useState import

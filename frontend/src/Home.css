@@ -115,7 +115,7 @@ body {
 
 /* 사이드바: 필요 시에만 자체 스크롤 */
 .sidebar {
-    width: 250px;
+    width: 300px; /* 원래 250 */
     background-color: #333;
     padding: 20px 0;
     border-right: 1px solid #444;
@@ -314,3 +314,38 @@ body {
 .toggle-btn::-moz-focus-inner {
     border: 0;
 }
+
+
+/* 도움말 */
+.help-link {
+    position: relative;
+}
+
+.help-dropdown {
+    position: absolute;
+    top: 100%;       /* 도움말 바로 밑 */
+    left: 115px;
+    margin-top: 4px;
+    background: #444;
+    border-radius: 4px;
+    padding: 6px 12px;
+    z-index: 1000;
+}
+
+.help-dropdown a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.help-dropdown a:hover {
+    color: #d1d1d1; /* 호버 시 노란색 등 원하는 색 */
+}
+
+
+
+
+
+
+
