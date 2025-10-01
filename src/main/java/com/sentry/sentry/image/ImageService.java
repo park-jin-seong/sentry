@@ -26,22 +26,14 @@ public class ImageService {
 
     private final EventResultRepository eventResultRepository;
 
-    @Value("${smb.username}")
-    private String smbUsername;
-
-    @Value("${smb.password}")
-    private String smbPassword;
-
-    @Value("${smb.domain:}")
-    private String smbDomain;
-
     public Optional<ByteArrayResource> getImageStreamFromSmb(Long eventResultId) {
         Optional<EventResult> eventResultOpt = eventResultRepository.findById(eventResultId);
-
         if (eventResultOpt.isEmpty()) {
             return Optional.empty();
         }
-
+        EventResult eventResult = eventResultOpt.get();
+        String smbUsername = eventResult.getServerInfo().getOsId();
+        String smbPassword = eventResult.getServerInfo().getOsPw();
         String smbPath = eventResultOpt.get().getThumbnailPath();
         smbPath = smbPath.replaceAll("[^\\x00-\\x7F]", "");
 
@@ -53,7 +45,7 @@ public class ImageService {
 
         try (SMBClient client = new SMBClient();
              Connection connection = client.connect(host);
-             Session session = connection.authenticate(new AuthenticationContext("keduit", "123$".toCharArray(), ""));
+             Session session = connection.authenticate(new AuthenticationContext(smbUsername, smbPassword.toCharArray(), ""));
              DiskShare disk = (DiskShare) session.connectShare(shareName)) {
 
             if (!disk.fileExists(filePath)) {

@@ -8,6 +8,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -27,10 +28,21 @@ public class EventResultController {
     public List<EventResultDTO> getImagesByCriteria(
             @RequestParam(required = false) List<Long> cameraIds,
             @RequestParam(required = false) List<Long> classIds,
-            @RequestParam(required = false) LocalDateTime startDateTime,
-            @RequestParam(required = false) LocalDateTime endDateTime
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDateTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDateTime,
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursorTime,
+            @RequestParam(required = false, defaultValue = "next") String direction
     ){
-        List<EventResult> eventResultList = eventResultService.getEventResultList(cameraIds, classIds, startDateTime, endDateTime);
+        List<EventResult> eventResultList = eventResultService.getEventResultList(
+                cameraIds,
+                classIds,
+                startDateTime,
+                endDateTime,
+                cursorId,
+                cursorTime,
+                direction
+        );
 
         List<EventResultDTO> allEventResultDTO = eventResultList.stream()
                 .map(EventResultDTO::new)
