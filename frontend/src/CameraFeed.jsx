@@ -64,23 +64,19 @@ const CameraFeed = () => {
 
     const handleDoubleClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
-
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
         const nx = x / rect.width;
         const ny = y / rect.height;
 
-        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-        const col = clamp(Math.floor(nx * 3), 0, 2);
-        const row = clamp(Math.floor(ny * 3), 0, 2);
+        const col = Math.min(2, Math.max(0, Math.floor(nx * 3)));
+        const row = Math.min(2, Math.max(0, Math.floor(ny * 3)));
 
         console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
-
         setFocusedArea({row, col});
     };
 
-    // 확대 해제
     const resetZoom = () => setFocusedArea(null);
 
     return (
@@ -102,17 +98,16 @@ const CameraFeed = () => {
                     objectFit: "cover",
                     transition: "transform 0.3s ease",
                     transform: focusedArea
-                        ? `scale(3) translate(-${focusedArea.col * 100}%, -${focusedArea.row * 100}%)`
+                        ? `scale(3) translate(-${focusedArea.col * (100 / 3)}%, -${focusedArea.row * (100 / 3)}%)`
                         : "scale(1)",
                     transformOrigin: "top left",
-                    cursor: "pointer", //
+                    cursor: "pointer",
                 }}
                 onDoubleClick={focusedArea ? resetZoom : handleDoubleClick}
             />
         </div>
     );
 };
-
 export default CameraFeed;
 
 
