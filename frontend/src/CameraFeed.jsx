@@ -94,10 +94,14 @@ const CameraFeed = () => {
 
     const handleContextMenu = (e) => {
         e.preventDefault();
-        setMenu({
-            visible: true,
-            x: e.pageX-300,
-            y: e.pageY-50,
+        // 전체화면 여부에 따라 보정값 다르게
+            const offsetX = isFullscreen ? 0 : 314;
+            const offsetY = isFullscreen ? 0 : 60;
+
+            setMenu({
+                visible: true,
+                x: e.pageX - offsetX,
+                y: e.pageY - offsetY,
         });
     };
 
