@@ -1,4 +1,4 @@
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {useAuth} from "./auth.jsx";
 
@@ -11,6 +11,7 @@ const CameraFeed = () => {
 
     const wsRef = useRef(null);
 
+    const [focusedArea, setFocusedArea] = useState(null);
 
 
     useEffect(() => {
@@ -62,23 +63,53 @@ const CameraFeed = () => {
 
 
     const handleDoubleClick = (e) => {
-        const img = e.currentTarget;                 // 클릭된 <img>
-        const rect = img.getBoundingClientRect();
-        const x = e.clientX - rect.left;             // 표시된 이미지 기준 X(px)
-        const y = e.clientY - rect.top;              // 표시된 이미지 기준 Y(px)
-        console.log("이미지 기준 좌표:", x, y);
+        const rect = e.currentTarget.getBoundingClientRect();
+
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const nx = x / rect.width;
+        const ny = y / rect.height;
+
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const col = clamp(Math.floor(nx * 3), 0, 2);
+        const row = clamp(Math.floor(ny * 3), 0, 2);
+
+        console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
+
+        setFocusedArea({row, col});
     };
 
+    // 확대 해제
+    const resetZoom = () => setFocusedArea(null);
 
     return (
-        <img
-            ref={imgRef}
-            id="videoFrame0"
-            alt="camera feed"
-            style={{ width: "100%", height: "100%" }}
-            onDoubleClick={handleDoubleClick}
-            draggable="false"
-        />
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                background: "#000",
+            }}
+        >
+            <img
+                ref={imgRef}
+                id="videoFrame0"
+                alt="camera feed"
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transition: "transform 0.3s ease",
+                    transform: focusedArea
+                        ? `scale(3) translate(-${focusedArea.col * 100}%, -${focusedArea.row * 100}%)`
+                        : "scale(1)",
+                    transformOrigin: "top left",
+                    cursor: "pointer", //
+                }}
+                onDoubleClick={focusedArea ? resetZoom : handleDoubleClick}
+            />
+        </div>
     );
 };
 

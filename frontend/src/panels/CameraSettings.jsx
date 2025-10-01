@@ -93,7 +93,7 @@ export default function CameraSettings() {
                     cctvUrl: selected.cctvurl,
                     coordx: toNum(selected.lon, 0),
                     coordy: toNum(selected.lat, 0),
-                    isAnalisis: false,
+                    isAnalisis: true,
                 }),
             });
             if (!r.ok) {
