@@ -1,7 +1,6 @@
 import {useEffect, useRef, useState} from "react";
 
 import {useAuth} from "./auth.jsx";
-import "./CameraFeed.css";
 
 
 const CameraFeed = () => {
@@ -12,6 +11,10 @@ const CameraFeed = () => {
         y: 0,
     });
 
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const containerRef = useRef(null);
+
     const imgRef = useRef(null);
 
     const {me, loading} = useAuth();
@@ -20,6 +23,15 @@ const CameraFeed = () => {
 
     const [focusedArea, setFocusedArea] = useState(null);
 
+// 전체 화면 일 때 전체화면 안 보이게 & 전체 화면 아닐 때 종료 안 보이게
+ useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener("fullscreenchange", handleFsChange);
+        return () => document.removeEventListener("fullscreenchange", handleFsChange);
+    }, []);
 
     useEffect(() => {
 
@@ -111,8 +123,27 @@ const CameraFeed = () => {
 
     const resetZoom = () => setFocusedArea(null);
 
+
+    /** 전체화면 진입 */
+    const enterFullscreen = () => {
+        if (containerRef.current) {
+            if (containerRef.current.requestFullscreen) {
+                containerRef.current.requestFullscreen();
+            } else if (containerRef.current.webkitRequestFullscreen) { // Safari 지원
+                containerRef.current.webkitRequestFullscreen();
+            }
+        }
+    };
+
+    /** 전체화면 종료 */
+    const exitFullscreen = () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+    };
+
     return (
-        <div>
+        <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%" }}>
             <img
                 ref={imgRef}
                 id="videoFrame0"
@@ -146,18 +177,29 @@ const CameraFeed = () => {
                     }}
                 >
                     <ul style={{ listStyle: "none", margin: 0, padding: "6px 0" }}>
-                        <li
-                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
-                            onClick={() => alert("메뉴 1 실행")}
-                        >
-                            영상 전체화면
-                        </li>
-                        <li
-                            style={{ padding: "8px 16px", cursor: "pointer" , color: "#333"}}
-                            onClick={() => alert("메뉴 2 실행")}
-                        >
-                            영상 전체화면 종료
-                        </li>
+                                                {!isFullscreen && (
+                                                    <li
+                                                        style={{ padding: "8px 16px", cursor: "pointer", color: "#333" }}
+                                                        onClick={() => {
+                                                            enterFullscreen();
+                                                            setMenu({ ...menu, visible: false });
+                                                        }}
+                                                    >
+                                                        영상 전체화면
+                                                    </li>
+                                                )}
+                                                {isFullscreen && (
+                                                    <li
+                                                        style={{ padding: "8px 16px", cursor: "pointer", color: "#333" }}
+                                                        onClick={() => {
+                                                            exitFullscreen();
+                                                            setMenu({ ...menu, visible: false });
+                                                        }}
+                                                    >
+                                                        영상 전체화면 종료
+                                                    </li>
+                                                )}
+
                         <li
                             style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
                             onClick={() => alert("메뉴 3 실행")}
