@@ -1,14 +1,13 @@
-import { useEffect, useRef } from "react";
+import {useEffect, useRef} from "react";
 
-import { useAuth } from "./auth.jsx";
-
+import {useAuth} from "./auth.jsx";
 
 
 const CameraFeed = () => {
 
     const imgRef = useRef(null);
 
-    const { me, loading } = useAuth();
+    const {me, loading} = useAuth();
 
     const wsRef = useRef(null);
 
@@ -21,11 +20,9 @@ const CameraFeed = () => {
         if (wsRef.current) return; // 이미 연결되어 있으면 재생성 방지
 
 
-
         const ws = new WebSocket("ws://localhost:8080/ws/rtsp");
 
         wsRef.current = ws;
-
 
 
         ws.onopen = () => {
@@ -35,7 +32,6 @@ const CameraFeed = () => {
             console.log("WebSocket connected");
 
         };
-
 
 
         ws.onmessage = (event) => {
@@ -51,11 +47,9 @@ const CameraFeed = () => {
         };
 
 
-
         ws.onclose = () => console.log("WebSocket closed");
 
         ws.onerror = (e) => console.log("WebSocket error", e);
-
 
 
         return () => {
@@ -67,15 +61,28 @@ const CameraFeed = () => {
     }, [me]);
 
 
+    const handleDoubleClick = (e) => {
+        const img = e.currentTarget;                 // 클릭된 <img>
+        const rect = img.getBoundingClientRect();
+        const x = e.clientX - rect.left;             // 표시된 이미지 기준 X(px)
+        const y = e.clientY - rect.top;              // 표시된 이미지 기준 Y(px)
+        console.log("이미지 기준 좌표:", x, y);
+    };
 
-    return <img ref={imgRef} id="videoFrame0" alt="camera feed" style={{ width: "100%", height: "100%" }} />;
 
+    return (
+        <img
+            ref={imgRef}
+            id="videoFrame0"
+            alt="camera feed"
+            style={{ width: "100%", height: "100%" }}
+            onDoubleClick={handleDoubleClick}
+            draggable="false"
+        />
+    );
 };
 
-
-
 export default CameraFeed;
-
 
 
 // import { useEffect, useRef, useState } from "react"; // useState import
