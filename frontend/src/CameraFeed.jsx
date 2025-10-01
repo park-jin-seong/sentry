@@ -80,22 +80,13 @@ const CameraFeed = () => {
     const resetZoom = () => setFocusedArea(null);
 
     return (
-        <div
-            style={{
-                width: "100%",
-                height: "100%",
-                overflow: "hidden",
-                background: "#000",
-            }}
-        >
             <img
                 ref={imgRef}
                 id="videoFrame0"
                 alt="camera feed"
                 style={{
-                    width: "100%",
+                    width: "calc(100% - 18px)",
                     height: "100%",
-                    objectFit: "cover",
                     transition: "transform 0.3s ease",
                     transform: focusedArea
                         ? `scale(3) translate(-${focusedArea.col * (100 / 3)}%, -${focusedArea.row * (100 / 3)}%)`
@@ -105,7 +96,6 @@ const CameraFeed = () => {
                 }}
                 onDoubleClick={focusedArea ? resetZoom : handleDoubleClick}
             />
-        </div>
     );
 };
 export default CameraFeed;
