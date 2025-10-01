@@ -8,7 +8,7 @@ import Login from "./Login.jsx";
 import Chat from "./Chat.jsx";
 import { loadAndApplyChatTheme } from "./lib/chatTheme.js";
 import Search from "./Search.jsx";
-
+import TopBar from "./TopBar.jsx";
 
 function InitCssVars() {
     useEffect(() => {
@@ -24,6 +24,21 @@ function RequireAuth() {
     return <Outlet />;
 }
 
+
+function LayoutWithTopBar() {
+    return (
+        <>
+            <TopBar />
+            <Outlet />
+        </>
+    );
+}
+
+function LayoutBare() {
+    return <Outlet />;
+}
+
+
 export default function App() {
     return (
         <AuthProvider>
@@ -34,13 +49,21 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
 
                 <Route element={<RequireAuth />}>
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/chat" element={<Chat />} /> {/* 필요하면 보호된 채팅 라우트 */}
+                    {/* TopBar 보이는 구간 */}
+                    <Route element={<LayoutWithTopBar />}>
+                        <Route path="/home" element={<Home />} />
+                        <Route path="/search" element={<Search />} />
+                        {/* 도움말 임시페이지임 */}
+                        <Route path="/help" element={<div className="content-area">도움말</div>} />
+                        <Route path="/chat" element={<Chat />} />
+                    </Route>
+
+                    {/* TopBar 숨기는 구간 (설정) */}
+                    <Route element={<LayoutBare />}>
+                        <Route path="/settings" element={<SettingsPage />} />
+                    </Route>
                 </Route>
 
-                {/* 기본/예외 라우팅 */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

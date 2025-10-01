@@ -6,7 +6,7 @@ import com.sentry.sentry.cam.CameraInfosRepository;
 import com.sentry.sentry.entity.CameraAssign;
 import com.sentry.sentry.entity.CameraInfos;
 import com.sentry.sentry.entity.UserAuthorityRepository;
-import com.sentry.sentry.entity.UserinfoRepository; // ✅ 추가
+import com.sentry.sentry.entity.UserinfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -122,4 +122,5 @@ public class CameraService {
         if (userOpt.isEmpty()) throw new IllegalArgumentException("user not found");
         assignRepo.deleteByUserIdAndAssignedCameraId(userOpt.get().getId(), cameraId);
     }
+
 }
