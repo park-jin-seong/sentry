@@ -1,9 +1,16 @@
 import {useEffect, useRef, useState} from "react";
 
 import {useAuth} from "./auth.jsx";
+import "./CameraFeed.css";
 
 
 const CameraFeed = () => {
+
+    const [menu, setMenu] = useState({
+        visible: false,
+        x: 0,
+        y: 0,
+    });
 
     const imgRef = useRef(null);
 
@@ -59,7 +66,32 @@ const CameraFeed = () => {
 
         };
 
+
+
     }, [me]);
+
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === "Escape") {
+                setMenu((prev) => ({ ...prev, visible: false }));
+            }
+        };
+        window.addEventListener("keydown", handleEsc);
+        return () => window.removeEventListener("keydown", handleEsc);
+    }, []);
+
+    const handleContextMenu = (e) => {
+        e.preventDefault();
+        setMenu({
+            visible: true,
+            x: e.pageX-300,
+            y: e.pageY-50,
+        });
+    };
+
+    const handleClick = () => {
+        if (menu.visible) setMenu({ ...menu, visible: false });
+    };
 
 
     const handleDoubleClick = (e) => {
@@ -80,6 +112,7 @@ const CameraFeed = () => {
     const resetZoom = () => setFocusedArea(null);
 
     return (
+        <div>
             <img
                 ref={imgRef}
                 id="videoFrame0"
@@ -95,7 +128,46 @@ const CameraFeed = () => {
                     cursor: "pointer",
                 }}
                 onDoubleClick={focusedArea ? resetZoom : handleDoubleClick}
+                onContextMenu={handleContextMenu}
+                onClick={handleClick}
             />
+            {menu.visible && (
+                <div
+                    style={{
+                        position: "absolute",
+                        top: menu.y,
+                        left: menu.x,
+                        background: "white",
+                        border: "1px solid #ccc",
+                        borderRadius: "6px",
+                        boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
+                        minWidth: "120px",
+                        zIndex: 1000,
+                    }}
+                >
+                    <ul style={{ listStyle: "none", margin: 0, padding: "6px 0" }}>
+                        <li
+                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
+                            onClick={() => alert("메뉴 1 실행")}
+                        >
+                            영상 전체화면
+                        </li>
+                        <li
+                            style={{ padding: "8px 16px", cursor: "pointer" , color: "#333"}}
+                            onClick={() => alert("메뉴 2 실행")}
+                        >
+                            영상 전체화면 종료
+                        </li>
+                        <li
+                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
+                            onClick={() => alert("메뉴 3 실행")}
+                        >
+                            지도 보기
+                        </li>
+                    </ul>
+                </div>
+            )}
+        </div>
     );
 };
 export default CameraFeed;
