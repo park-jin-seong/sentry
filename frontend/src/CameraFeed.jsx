@@ -147,7 +147,7 @@ const CameraFeed = () => {
     };
 
     return (
-        <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%" }}>
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
             <img
                 ref={imgRef}
                 id="videoFrame0"
@@ -172,8 +172,8 @@ const CameraFeed = () => {
                         position: "absolute",
                         top: menu.y,
                         left: menu.x,
-                        background: "white",
-                        border: "1px solid #ccc",
+                        background: "#333",
+                        border: "1px solid #2E2E2E",
                         borderRadius: "6px",
                         boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
                         minWidth: "120px",
@@ -181,36 +181,68 @@ const CameraFeed = () => {
                     }}
                 >
                     <ul style={{ listStyle: "none", margin: 0, padding: "6px 0" }}>
-                                                {!isFullscreen && (
-                                                    <li
-                                                        style={{ padding: "8px 16px", cursor: "pointer", color: "#333" }}
-                                                        onClick={() => {
-                                                            enterFullscreen();
-                                                            setMenu({ ...menu, visible: false });
-                                                        }}
-                                                    >
-                                                        영상 전체화면
-                                                    </li>
-                                                )}
-                                                {isFullscreen && (
-                                                    <li
-                                                        style={{ padding: "8px 16px", cursor: "pointer", color: "#333" }}
-                                                        onClick={() => {
-                                                            exitFullscreen();
-                                                            setMenu({ ...menu, visible: false });
-                                                        }}
-                                                    >
-                                                        영상 전체화면 종료
-                                                    </li>
-                                                )}
-
+                      {!isFullscreen && (
                         <li
-                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
-                            onClick={() => alert("메뉴 3 실행")}
+                          style={{
+                            padding: "8px 16px",
+                            cursor: "pointer",
+                            color: "#d9d9d9",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ffffff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "#d9d9d9";
+                          }}
+                          onClick={() => {
+                            enterFullscreen();
+                            setMenu({ ...menu, visible: false });
+                          }}
                         >
-                            지도 보기
+                          영상 전체화면
                         </li>
+                      )}
+
+                      {isFullscreen && (
+                        <li
+                          style={{
+                            padding: "8px 16px",
+                            cursor: "pointer",
+                            color: "#d9d9d9",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ffffff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "#d9d9d9";
+                          }}
+                          onClick={() => {
+                            exitFullscreen();
+                            setMenu({ ...menu, visible: false });
+                          }}
+                        >
+                          영상 전체화면 종료
+                        </li>
+                      )}
+
+                      <li
+                        style={{
+                          padding: "8px 16px",
+                          cursor: "pointer",
+                          color: "#d9d9d9",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#ffffff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "#d9d9d9";
+                        }}
+                        onClick={() => alert("지도 보기 실행")}
+                      >
+                        지도 보기
+                      </li>
                     </ul>
+
                 </div>
             )}
         </div>
