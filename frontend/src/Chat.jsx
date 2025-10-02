@@ -15,7 +15,7 @@ const Chat = () => {
 
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
-    const [composing, setComposing] = useState(false); // ⬅️ IME 한글 조합 여부
+    const [composing, setComposing] = useState(false);
     const [connected, setConnected] = useState(false);
 
     const stompClientRef = useRef(null);
@@ -31,7 +31,6 @@ const Chat = () => {
         messagesRef.current = messages;
     }, [messages]);
 
-    // 초기/무한스크롤 메시지 조회
     const fetchMessages = async (lastMessageId) => {
         if (isLoadingMessages.current || !hasMore) return;
         isLoadingMessages.current = true;
@@ -82,7 +81,6 @@ const Chat = () => {
         fetchMessages(null);
     }, []);
 
-    // 스크롤 유지
     useEffect(() => {
         if (!chatContainerRef.current || messages.length === 0) return;
         const el = chatContainerRef.current;
@@ -96,7 +94,6 @@ const Chat = () => {
         }
     }, [messages]);
 
-    // 무한스크롤 핸들러
     useEffect(() => {
         const el = chatContainerRef.current;
         if (!el) return;
@@ -104,14 +101,12 @@ const Chat = () => {
         const handleScroll = () => {
             const { scrollTop, scrollHeight, clientHeight } = el;
 
-            // 상단 근처 → 과거 메시지 추가 로딩
             if (scrollTop <= 5 && !isLoadingMessages.current && hasMore) {
                 const oldest = messagesRef.current[0];
                 const lastId = oldest?.messageId ?? oldest?.id;
                 if (lastId) fetchMessages(lastId);
             }
 
-            // 하단 고정 여부 업데이트
             isScrolledToBottom.current = scrollHeight - scrollTop - clientHeight < 5;
         };
 
@@ -120,7 +115,6 @@ const Chat = () => {
         return () => el.removeEventListener("scroll", throttled);
     }, [hasMore]);
 
-    // 소켓 연결/구독
     useEffect(() => {
         const serverUrl = "http://localhost:8080/chat";
         const subscribeUrl = "/room/1";
@@ -145,7 +139,6 @@ const Chat = () => {
                     setMessages((prev) => {
                         let updated = [...prev];
 
-                        // 1) optimisticId로 낙관적 메시지 교체
                         if (messageBody.optimisticId) {
                             const idx = updated.findIndex(
                                 (m) => m.optimisticId === messageBody.optimisticId
@@ -159,7 +152,6 @@ const Chat = () => {
                             }
                         }
 
-                        // 2) messageId 중복 방지
                         if (messageBody.messageId) {
                             const exists = updated.some(
                                 (m) => m.messageId === messageBody.messageId
@@ -167,7 +159,6 @@ const Chat = () => {
                             if (exists) return updated;
                         }
 
-                        // 3) 신규 추가
                         return [...updated, messageBody];
                     });
                 });
@@ -186,7 +177,6 @@ const Chat = () => {
         };
     }, []);
 
-    // 전송
     const sendMessage = () => {
         if (!stompClientRef.current) return;
 

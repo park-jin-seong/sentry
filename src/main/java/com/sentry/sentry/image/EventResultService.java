@@ -15,8 +15,24 @@ public class EventResultService {
     public List<EventResult> getEventResultList(Long cameraId){
         return eventResultRepository.findByCameraInfo_CameraId(cameraId);
     }
-    public List<EventResult> getEventResultList(List<Long> cameraIds, List<Long> classIds, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        return eventResultRepository.findBySearchCriteria(cameraIds, classIds, startDateTime, endDateTime);
-    }
 
+    public List<EventResult> getEventResultList(
+            List<Long> cameraIds,
+            List<Long> classIds,
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
+            Long cursorId,
+            LocalDateTime cursorTime,
+            String direction
+    ) {
+        return eventResultRepository.findBySearchCriteria(
+                cameraIds,
+                classIds,
+                startDateTime,
+                endDateTime,
+                cursorId,
+                cursorTime,
+                direction
+        );
+    }
 }

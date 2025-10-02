@@ -11,6 +11,7 @@ public class EventResultDTO {
     private int serverId;
     private Long classId;
     private LocalDateTime eventOccurTime;
+    private String cameraName;
 
     public EventResultDTO(EventResult eventResult) {
         this.eventResultId = eventResult.getEventResultId();
@@ -18,5 +19,6 @@ public class EventResultDTO {
         this.serverId = eventResult.getServerInfo().getServerId();
         this.classId = eventResult.getClassId();
         this.eventOccurTime = eventResult.getEventOccurTime();
+        this.cameraName = eventResult.getCameraInfo().getCameraName();
     }
 }
