@@ -73,11 +73,9 @@ body{
     outline:none;
     transition: box-shadow .15s;
 }
+
 .login-input::placeholder{ color:#A6A6A6; }
-.login-input:focus{
-    /* 테두리는 그대로 626262 유지, 포커스만 은은한 그림자 */
-    box-shadow: 0 0 0 3px rgba(32,117,144,.25);
-}
+
 
 .login-error{
     margin:6px 0 -4px;
@@ -117,3 +115,43 @@ body{
     .login-right{ display:none; }
     .login-left{ padding:32px 24px; }
 }
+
+/*브라우저가 자동완성 해제 css*/
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px var(--field) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 기존 스타일 유지 + 아래 추가 */
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper .login-input {
+    width: 100%;              /* 아이디 input과 동일 폭 */
+    padding-right: 40px;      /* 아이콘 공간 확보 */
+    box-sizing: border-box;   /* padding 포함한 폭 계산 */
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.password-toggle:hover {
+    opacity: 1;
+}
+

@@ -84,7 +84,12 @@ public class AuthService {
         Userinfo saved = userinfoRepository.save(nu);
 
         // 2) 권한 저장
-        userAuthorityRepository.save(new UserAuthority(saved.getId(), newRole));
+        userAuthorityRepository.save(
+                UserAuthority.builder()
+                        .userId(saved.getId())
+                        .authority(newRole)
+                        .build()
+        );
 
         // 3) 기본 방(id=1)에 room_user 자동 생성
         Room defaultRoom = roomRepository.findById(1L)

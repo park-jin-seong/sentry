@@ -1,3 +1,4 @@
+// src/main/java/com/sentry/sentry/cam/CameraAssignRepository.java
 package com.sentry.sentry.cam;
 
 import com.sentry.sentry.entity.CameraAssign;
@@ -11,6 +12,8 @@ import java.util.Optional;
 public interface CameraAssignRepository extends JpaRepository<CameraAssign, Long> {
     List<CameraAssign> findByUserId(Long userId);
     Optional<CameraAssign> findByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId);
+
+    boolean existsByUserIdAndAssignedCameraId(Long userId, Long assignedCameraId); // ✅
 
     @Modifying
     @Transactional

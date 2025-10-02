@@ -74,8 +74,9 @@ public class FrameSocketThreadClass {
                 dos.flush();
 
 
-                while (true) {
+                while (m_running) {
                     try {
+                        Thread.sleep(1);
                         byte[] lenBytes = new byte[4];
                         dis.readFully(lenBytes); // 정확히 4바이트 채움
 
