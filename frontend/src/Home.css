@@ -118,7 +118,7 @@ body {
 
 /* 사이드바: 필요 시에만 자체 스크롤 */
 .sidebar {
-    width: 300px; /* 원래 250 */
+     width: var(--sidebar-width);
     background-color: #333;
     padding: 20px 0;
     border-right: 1px solid #444;
@@ -227,8 +227,12 @@ body {
     left: auto !important; /* 남아있는 left 영향 차단 */
     z-index: 1300; /* 오버레이(2000)보다 낮게 */
     height: 100vh;
-    width: clamp(20vw, calc(var(--chat-width-pct, 70) * 1vw), calc(100vw - 250px));
-    background-color: rgba(46, 46, 46, var(--chat-opacity, 0.7));
+    width: clamp(
+        20vw,
+        calc((100vw - var(--sidebar-width)) * (var(--chat-width-pct, 70) / 100)),
+        calc(100vw - var(--sidebar-width))
+  );
+    background-color: rgba(46, 46, 46, var(--chat-bg-alpha, 0.7));
     border-left: 2px solid #00a0e9;
     box-sizing: border-box;
     transform: translateX(100%); /* 닫을 때 오른쪽 바깥 */
@@ -246,9 +250,9 @@ body {
 .toggle-btn {
     position: absolute;
     top: 50%;
-    left: -20px;
+    left: -30px;
     transform: translateY(-50%);
-    background-color: #696969;
+    background-color: #595959;
     border: none;
     color: #fff;
     cursor: pointer;

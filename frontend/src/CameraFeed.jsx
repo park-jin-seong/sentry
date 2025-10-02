@@ -258,7 +258,7 @@ const CameraFeed = () => {
                 id="videoFrame0"
                 alt="camera feed"
                 style={{
-                    width: "calc(100% - 18px)",
+                    width: "calc(100% - 28.5px)",
                     height: "100%",
                     transition: "transform 0.3s ease",
                     transform: focusedArea
