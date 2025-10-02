@@ -247,9 +247,9 @@ body {
 .toggle-btn {
     position: absolute;
     top: 50%;
-    left: -20px;
+    left: -30px;
     transform: translateY(-50%);
-    background-color: #696969;
+    background-color: #595959;
     border: none;
     color: #fff;
     cursor: pointer;

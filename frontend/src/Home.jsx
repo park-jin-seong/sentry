@@ -8,6 +8,7 @@ import sentryLogo from "./assets/sentryLogo.png";
 import axios from "axios";
 import CameraFeed from "./CameraFeed.jsx";
 import closeIcon from "./assets/close.png";
+import bar from "./assets/bar.png";
 
 const Home = () => {
     const KAKAO_MAP_API_KEY = import.meta.env.VITE_REACT_KAKAO_MAP_API_KEY;
@@ -176,7 +177,9 @@ const Home = () => {
             {/* 우측 챗 패널 */}
             <div className={`collapsible-bar ${isSidebarOpen ? "open" : ""}`}>
                 <button className="toggle-btn" onClick={toggleSidebar}>
-                    <div className="toggle-icon">...</div>
+                    <div className="bar">
+                    <img src={bar} alt="bar"/>
+                    </div>
                 </button>
                 <div className="bar-content">
                     <div className="chat-content-area">

@@ -15,7 +15,7 @@ const Chat = () => {
 
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
-    const [composing, setComposing] = useState(false); // ⬅️ IME 한글 조합 여부
+    const [composing, setComposing] = useState(false); //  IME 한글 조합 여부
     const [connected, setConnected] = useState(false);
 
     const stompClientRef = useRef(null);
