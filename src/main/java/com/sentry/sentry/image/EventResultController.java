@@ -64,11 +64,10 @@ public class EventResultController {
         ByteArrayResource resource = imageOpt.get();
 
         try (InputStream in = resource.getInputStream()) {
-            Tika tika = new Tika();
-            String mimeType = tika.detect(in);
+            MediaType mediaType = MediaType.parseMediaType("image/png");
 
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(mimeType))
+                    .contentType(mediaType)
                     .body(new InputStreamResource(resource.getInputStream()));
         } catch (Exception e) {
             e.printStackTrace();

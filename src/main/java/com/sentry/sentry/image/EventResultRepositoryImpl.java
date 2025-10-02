@@ -5,6 +5,7 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sentry.sentry.entity.EventResult;
+import com.sentry.sentry.entity.QCameraInfos;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -83,6 +84,7 @@ public class EventResultRepositoryImpl implements CustomEventResultRepository {
 
         List<EventResult> results = queryFactory
                 .selectFrom(eventResult)
+                .join(eventResult.cameraInfo, QCameraInfos.cameraInfos)
                 .where(builder)
                 .orderBy(timeOrder, idOrder)
                 .limit(PAGE_SIZE + 1)

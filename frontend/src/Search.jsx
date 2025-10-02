@@ -283,15 +283,15 @@ const Search = () => {
 
                                 return (
                                     <div key={index} className="event-result-item">
+                                        <div className="image-id-info">
+                                            {result.cameraName}
+                                        </div>
                                         <img
                                             src={`/api/image/stream/${result.eventResultId}`}
                                             alt="Event Thumbnail"
                                         />
                                         <div className="image-info">
-                                            <p>시간: {eventResultTime}</p>
-                                        </div>
-                                        <div>
-                                            {`ID: ${result.eventResultId}`}
+                                            <p>{eventResultTime}</p>
                                         </div>
                                     </div>
                                 );
