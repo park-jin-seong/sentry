@@ -5,18 +5,22 @@ import { useAuth } from "./auth.jsx";
 import "./Login.css";
 import sentryLogo from "./assets/sentryLogo.jpg";
 import loginImg from "./assets/loginImg.jpg";
+import eyeIcon from "./assets/eye.png";
+import hideIcon from "./assets/hide.png";
 
 export default function Login() {
     const [username, setUsername] = useState("");
     const [userpassword, setUserPassword] = useState("");
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
     const navigate = useNavigate();
     const location = useLocation();
     const next = location.state?.from?.pathname || "/home";
     const { reload, me } = useAuth();
 
-    // ✅ 로그인 페이지 진입 시 잔여 토큰/리프레시 쿠키 정리 (자동 재로그인/401 루프 방지)
+    // 로그인 페이지 진입 시 잔여 토큰/리프레시 쿠키 정리
     useEffect(() => {
         api.clearAccessToken?.();
         fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
@@ -47,8 +51,6 @@ export default function Login() {
             const res = await api("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // 백엔드는 password/pw/userpassword 모두 허용하도록 해두어도,
-                // 프런트는 일반적으로 "password" 키를 쓰는 것을 권장합니다.
                 body: JSON.stringify({ username, password: userpassword }),
                 credentials: "include",
             });
@@ -109,16 +111,26 @@ export default function Login() {
                             placeholder="아이디를 입력하세요"
                             autoComplete="username"
                         />
+
                         <label htmlFor="userpassword" className="login-label">비밀번호</label>
-                        <input
-                            id="userpassword"
-                            type="password"
-                            className="login-input"
-                            value={userpassword}
-                            onChange={(e) => setUserPassword(e.target.value)}
-                            placeholder="비밀번호를 입력하세요"
-                            autoComplete="current-password"
-                        />
+                        <div className="password-wrapper">
+                            <input
+                                id="userpassword"
+                                type={showPassword ? "text" : "password"}
+                                className="login-input"
+                                value={userpassword}
+                                onChange={(e) => setUserPassword(e.target.value)}
+                                placeholder="비밀번호를 입력하세요"
+                                autoComplete="current-password"
+                            />
+                            <img
+                                src={showPassword ? hideIcon : eyeIcon}
+                                alt="toggle password"
+                                className="password-toggle"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                            />
+                        </div>
+
                         {err && <p className="login-error">아이디와 비밀번호를 다시 입력해주세요</p>}
                         <button type="submit" className="login-btn" disabled={loading}>
                             {loading ? "로그인 중..." : "로그인"}
