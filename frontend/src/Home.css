@@ -49,6 +49,9 @@ body {
     display: block;
     object-fit: contain;
 }
+.logo-img:hover{
+    cursor:pointer;
+}
 
 /* 내비 */
 .nav-menu {

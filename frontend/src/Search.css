@@ -10,6 +10,7 @@ body {
     color: #fff;
     width: 100vw;
     height: 100vh;
+    overflow-x: hidden;
 }
 
 .app-container {
@@ -17,6 +18,7 @@ body {
     flex-direction: column;
     height: calc(100vh - 60px); /* 고정 */
     width: 100vw;
+    overflow-x: hidden;
 }
 
 .top-bar {
@@ -29,6 +31,7 @@ body {
     height: 60px;
     width: 100%;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .logo-container {
@@ -40,6 +43,9 @@ body {
     height: 50px;
     display: block;
     object-fit: contain;
+}
+.logo-img:hover{
+    cursor:pointer;
 }
 
 .nav-menu {
@@ -100,6 +106,7 @@ body {
 
 .main-content {
     display: flex;
+    height: calc(100vh - 60px);
     flex: 1;
 }
 
@@ -110,6 +117,7 @@ body {
     border-right: 1px solid #444;
     overflow-y: auto;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .search-container,
@@ -232,11 +240,105 @@ body {
     background-color: #2a8baf;
 }
 
+
 .content-area {
     flex: 1;
     position: relative;
     padding: 20px;
     background-color: #2e2e2e;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 100%;
+    flex: 1;
+    grid-template-rows: repeat(3, 1fr);
+    overflow-y: hidden;
+    align-content: start;
+}
+
+.event-result-item {
+    background-color: #3e3e3e;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.image-id-info {
+    background: #555;
+    color: #fff;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.event-result-item img {
+    flex: 1;
+    width: 100%;
+    display: block;
+    object-fit: fill;
+    min-height: 0;
+}
+
+.image-info {
+    padding: 10px;
+    font-size: 14px;
+    color: #fff;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.image-info p {
+    margin: 0;
+}
+
+.no-results-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2rem;
+    color: #b7b7b7;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    gap: 20px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.pagination-controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #207590;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #2a8baf;
+}
+
+.pagination-controls button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
 }
 
 .collapsible-bar.open {

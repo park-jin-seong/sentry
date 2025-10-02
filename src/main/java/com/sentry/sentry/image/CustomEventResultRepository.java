@@ -7,5 +7,13 @@ import java.util.List;
 
 
 public interface CustomEventResultRepository {
-    List<EventResult> findBySearchCriteria(List<Long> cameraIds, List<Long> classIds, LocalDateTime startDateTime, LocalDateTime endDateTime);
+    List<EventResult> findBySearchCriteria(
+            List<Long> cameraIds,
+            List<Long> classIds,
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
+            Long cursorId,
+            LocalDateTime cursorTime,
+            String direction
+    );
 }
