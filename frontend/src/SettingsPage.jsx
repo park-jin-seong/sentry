@@ -11,7 +11,6 @@ export default function SettingsPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { me } = useAuth();
-
     const isObserver = !!me?.roles?.includes?.("ROLE_OBSERVER");
 
     // URL ?tab=... → 초기 탭 결정 (observer면 chat 강제)
@@ -64,7 +63,7 @@ export default function SettingsPage() {
             <button
                 key={tab.key}
                 className={
-                    `sidebar-item ${selected ? "is-active" : ""} ${disabled ? "is-disabled" : ""}`
+                    `sidebar-list ${selected ? "is-active" : ""} ${disabled ? "is-disabled" : ""}`
                 }
                 onClick={() => {
                     if (!disabled) setActive(tab.key);
@@ -89,7 +88,8 @@ export default function SettingsPage() {
                         src={sentryLogo}
                         alt="SENTRY Logo"
                         className="settings-logo-img"
-                        draggable="false"
+                        onClick={() => navigate("/home")}
+                        style={{ cursor: "pointer" }}
                     />
                 </div>
 

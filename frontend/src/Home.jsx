@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {useState, useEffect} from "react";
 import "./Home.css";
 import Chat from "./Chat";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "./auth.jsx";
-import { api } from "./lib/api.js";
+import {NavLink, useNavigate} from "react-router-dom";
+import {useAuth} from "./auth.jsx";
+import {api} from "./lib/api.js";
 import sentryLogo from "./assets/sentryLogo.png";
 import axios from "axios";
 import CameraFeed from "./CameraFeed.jsx";
+import closeIcon from "./assets/close.png";
 
 const Home = () => {
     const KAKAO_MAP_API_KEY = import.meta.env.VITE_REACT_KAKAO_MAP_API_KEY;
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { me, loading } = useAuth();
+    const {me, loading} = useAuth();
     const [camList, setCamList] = useState([]);
     const navigate = useNavigate();
 
@@ -25,55 +26,55 @@ const Home = () => {
 
     const onLogout = async () => {
         try {
-            await api("/api/auth/logout", { method: "POST" });
+            await api("/api/auth/logout", {method: "POST"});
         } finally {
             api.clearAccessToken?.();
-            navigate("/login", { replace: true });
+            navigate("/login", {replace: true});
         }
     };
 
+    /* Kakao Map SDK 로드 */
     useEffect(() => {
-        const script = document.createElement('script');
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_API_KEY}&libraries=services,clusterer,drawing&autoload=false`;
+        const script = document.createElement("script");
+        const appkey = KAKAO_MAP_API_KEY || "215819b4115f72be72f45137965dbc9e";
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appkey}&libraries=services,clusterer,drawing&autoload=false`;
         script.async = true;
 
         script.onload = () => {
             if (window.kakao && window.kakao.maps) {
-                window.kakao.maps.load(() => {
-                    setIsKakaoMapLoaded(true);
-                });
+                window.kakao.maps.load(() => setIsKakaoMapLoaded(true));
             }
         };
 
         document.head.appendChild(script);
-
         return () => {
             document.head.removeChild(script);
         };
-    }, []);
+    }, [KAKAO_MAP_API_KEY]);
 
+    /* 로그인 후 카메라 목록 */
     useEffect(() => {
         if (me?.id && !loading) {
             getCamList();
         }
     }, [me, loading]);
 
+    /* 맵 초기화/업데이트: selectedCoords 변경 시 */
     useEffect(() => {
         if (showMap && selectedCoords && isKakaoMapLoaded) {
-            const container = document.getElementById('map');
+            const container = document.getElementById("map-canvas");
             if (!container) return;
 
-            const options = {
-                center: new window.kakao.maps.LatLng(selectedCoords.x, selectedCoords.y),
-                level: 3,
-            };
+            // Kakao LatLng: (lat, lng) = (위도, 경도)
+            const center = new window.kakao.maps.LatLng(
+                selectedCoords.lat,
+                selectedCoords.lng
+            );
 
+            const options = {center, level: 3};
             const map = new window.kakao.maps.Map(container, options);
-            const markerPosition = new window.kakao.maps.LatLng(selectedCoords.x, selectedCoords.y);
-            const marker = new window.kakao.maps.Marker({
-                position: markerPosition,
-            });
 
+            const marker = new window.kakao.maps.Marker({position: center});
             marker.setMap(map);
         }
     }, [showMap, selectedCoords, isKakaoMapLoaded]);
@@ -81,18 +82,23 @@ const Home = () => {
     const getCamList = async () => {
         if (!me?.id) return;
         try {
-            const response = await axios.get(`/api/cam/list-byUserId?userId=${me.id}`);
-            setCamList(response.data);
-            console.log("카메라 목록:", response.data);
+            const res = await axios.get(`/api/cam/list-byUserId?userId=${me.id}`);
+            setCamList(res.data);
+            console.log("카메라 목록:", res.data);
         } catch (err) {
             console.error("API 호출 실패", err);
         }
     };
 
     const loadMap = (cam) => {
-        setSelectedCoords({ x: cam.coordx, y: cam.coordy });
+        // (lat=coordy, lng=coordx)로 교정
+        setSelectedCoords({lat: cam?.coordy, lng: cam?.coordx});
         setShowMap(true);
     };
+
+    // 오버레이 클릭 시 닫힘 (모달 내부 클릭은 유지)
+    const onOverlayClick = () => setShowMap(false);
+    const stopPropagation = (e) => e.stopPropagation();
 
     return (
         <div className="app-container">
@@ -131,7 +137,7 @@ const Home = () => {
                 <aside className="sidebar">
                     <ul className="sidebar-menu">
                         {camList.map((cam, index) => {
-                            const camIndex = (index + 1).toString().padStart(2, '0');
+                            const camIndex = (index + 1).toString().padStart(2, "0");
                             return (
                                 <li
                                     key={cam.id || index}
@@ -146,48 +152,39 @@ const Home = () => {
                 </aside>
 
                 <main className="content-area">
-                    <CameraFeed />
-                    {showMap && (
-                        <div
-                            id="map"
-                            style={{
-                                position: 'absolute',
-                                top: '50px',
-                                left: '50px',
-                                width: '1500px',
-                                height: '750px',
-                                zIndex: 100,
-                                border: '1px solid black'
-                            }}
-                        >
-                            <button
-                                style={{
-                                    position: 'absolute',
-                                    top: '10px',
-                                    right: '10px',
-                                    zIndex: 200,
-                                    padding: '8px 12px',
-                                    cursor: 'pointer',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                                    border: '1px solid #ccc',
-                                    color: "black"
-                                }}
-                                onClick={() => setShowMap(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
+                    {/* CameraFeed 전체 화면으로 덮음 (CSS에서 absolute inset:0) */}
+                    <CameraFeed/>
 
+                    {/* 지도 모달 오버레이 */}
+                    {showMap && (
+                        <div className="map-overlay" onClick={onOverlayClick}>
+                            <div className="map-modal" onClick={stopPropagation}>
+                                <div className="map-box">
+                                    <div id="map-canvas" className="map-canvas"/>
+                                </div>
+                                <button
+                                    className="map-close"
+                                    onClick={() => setShowMap(false)}
+                                    aria-label="지도 닫기"
+                                    title="닫기"
+                                >
+                                    <img src={closeIcon} alt="닫기" draggable="false"/>
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </main>
             </div>
 
+            {/* 우측 챗 패널 */}
             <div className={`collapsible-bar ${isSidebarOpen ? "open" : ""}`}>
                 <button className="toggle-btn" onClick={toggleSidebar}>
                     <div className="toggle-icon">...</div>
                 </button>
                 <div className="bar-content">
-                    <div className="chat-content-area">{isSidebarOpen && <Chat />}</div>
+                    <div className="chat-content-area">
+                        {isSidebarOpen && <Chat/>}
+                    </div>
                 </div>
             </div>
         </div>
