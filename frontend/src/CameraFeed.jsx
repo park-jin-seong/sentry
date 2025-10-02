@@ -11,6 +11,19 @@ const CameraFeed = () => {
     const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
     const [camList, setCamList] = useState([]);
 
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const containerRef = useRef(null);
+    // 전체 화면 일 때 전체화면 안 보이게 & 전체 화면 아닐 때 종료 안 보이게
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener("fullscreenchange", handleFsChange);
+        return () => document.removeEventListener("fullscreenchange", handleFsChange);
+    }, []);
+
     const KAKAO_MAP_API_KEY = import.meta.env.VITE_REACT_KAKAO_MAP_API_KEY;
 
     const getCamList = async () => {
@@ -168,6 +181,10 @@ const CameraFeed = () => {
 
     const handleContextMenu = (e) => {
         e.preventDefault();
+
+        const offsetX = isFullscreen ? 0 : 314;
+        const offsetY = isFullscreen ? 0 : 60;
+
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -181,13 +198,13 @@ const CameraFeed = () => {
         console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
         focusedArea ? setMenu({
             visible: true,
-            x: e.pageX-300,
-            y: e.pageY-50,
+            x: e.pageX - offsetX,
+            y: e.pageY - offsetY,
             channel: 3*focusedArea.row+focusedArea.col,
         }) : setMenu({
             visible: true,
-            x: e.pageX-300,
-            y: e.pageY-50,
+            x: e.pageX - offsetX,
+            y: e.pageY - offsetY,
             channel: 3*row+col,
         });
     };
@@ -214,8 +231,28 @@ const CameraFeed = () => {
 
     const resetZoom = () => setFocusedArea(null);
 
+
+    /** 전체화면 진입 */
+    const enterFullscreen = () => {
+        if (containerRef.current) {
+            if (containerRef.current.requestFullscreen) {
+                containerRef.current.requestFullscreen();
+            } else if (containerRef.current.webkitRequestFullscreen) { // Safari 지원
+                containerRef.current.webkitRequestFullscreen();
+            }
+        }
+    };
+
+    /** 전체화면 종료 */
+    const exitFullscreen = () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+    };
+
+
     return (
-        <div>
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
             <img
                 ref={imgRef}
                 id="videoFrame0"
@@ -240,8 +277,8 @@ const CameraFeed = () => {
                         position: "absolute",
                         top: menu.y,
                         left: menu.x,
-                        background: "white",
-                        border: "1px solid #ccc",
+                        background: "#333",
+                        border: "1px solid #2E2E2E",
                         borderRadius: "6px",
                         boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
                         minWidth: "120px",
@@ -249,20 +286,60 @@ const CameraFeed = () => {
                     }}
                 >
                     <ul style={{ listStyle: "none", margin: 0, padding: "6px 0" }}>
+                        {!isFullscreen && (
+                            <li
+                                style={{
+                                    padding: "8px 16px",
+                                    cursor: "pointer",
+                                    color: "#d9d9d9",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = "#ffffff";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = "#d9d9d9";
+                                }}
+                                onClick={() => {
+                                    enterFullscreen();
+                                    setMenu({ ...menu, visible: false });
+                                }}
+                            >
+                                영상 전체화면
+                            </li>
+                        )}
+                        {isFullscreen && (
+                            <li
+                                style={{
+                                    padding: "8px 16px",
+                                    cursor: "pointer",
+                                    color: "#d9d9d9",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = "#ffffff";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = "#d9d9d9";
+                                }}
+                                onClick={() => {
+                                    exitFullscreen();
+                                    setMenu({ ...menu, visible: false });
+                                }}
+                            >
+                                영상 전체화면 종료
+                            </li>
+                        )}
                         <li
-                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
-                            onClick={() => alert("메뉴 1 실행")}
-                        >
-                            영상 전체화면
-                        </li>
-                        <li
-                            style={{ padding: "8px 16px", cursor: "pointer" , color: "#333"}}
-                            onClick={() => alert("메뉴 2 실행")}
-                        >
-                            영상 전체화면 종료
-                        </li>
-                        <li
-                            style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
+                            style={{
+                                padding: "8px 16px",
+                                cursor: "pointer",
+                                color: "#d9d9d9",
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = "#ffffff";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = "#d9d9d9";
+                            }}
                             onClick={() => {
                                 loadMap(camList[menu.channel]);
                                 setMenu({ ...menu, visible: false });
