@@ -7,6 +7,7 @@ import com.sentry.sentry.socket.ServerInfoService;
 import com.sentry.sentry.socket.StreamInfoDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -42,18 +43,25 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
         }).start();
     }
 
-    private void streamFrames(WebSocketSession session, FrameSocketThreadClass  frameSocketThreadClass){
-        System.out.println(session.isOpen());
-        frameSocketThreadClass.Start();
-        while (session.isOpen()) {
-            try {
-                String base64Frame = frameSocketThreadClass.getLatestFrameBase64();
-                session.sendMessage(new TextMessage(base64Frame));
-                Thread.sleep(1); // TODO: grabber.getFrameRate() 반영 가능
-            } catch (Exception e) {
-                e.printStackTrace();
-                break;
+    private void streamFrames(WebSocketSession session, FrameSocketThreadClass frameThread) throws InterruptedException {
+        frameThread.Start();
+        try {
+            while (session.isOpen()) {
+                String frame = frameThread.getLatestFrameBase64();
+                session.sendMessage(new TextMessage(frame));
+                Thread.sleep(1);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            frameThread.Stop(); // 클라이언트 종료 시 grabber 종료
+            System.out.println("Streaming thread 종료: " + session.getId());
         }
     }
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        System.out.println("WebSocket closed: " + session.getId() + " 상태: " + status);
+        // session 종료 시 관련 FrameSocketThreadClass 종료
+    }
+
 }

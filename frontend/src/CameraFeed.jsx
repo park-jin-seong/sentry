@@ -1,74 +1,160 @@
-import {useEffect, useRef, useState} from "react";
-
+import React, {useEffect, useRef, useState} from "react";
+import {api} from "./lib/api.js";
 import {useAuth} from "./auth.jsx";
-import "./CameraFeed.css";
+import closeIcon from "./assets/close.png";
+import axios from "axios";
 
 
 const CameraFeed = () => {
+    const [showMap, setShowMap] = useState(false);
+    const [selectedCoords, setSelectedCoords] = useState(null);
+    const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
+    const [camList, setCamList] = useState([]);
+
+    const KAKAO_MAP_API_KEY = import.meta.env.VITE_REACT_KAKAO_MAP_API_KEY;
+
+    const getCamList = async () => {
+        if (!me?.id) return;
+        try {
+            const res = await axios.get(`/api/cam/list-byUserId?userId=${me.id}`);
+            setCamList(res.data);
+            console.log("카메라 목록:", res.data);
+        } catch (err) {
+            console.error("API 호출 실패", err);
+        }
+    };
+
+    const {me, loading} = useAuth();
+    useEffect(() => {
+        if (me?.id && !loading) {
+            getCamList();
+        }
+    }, [me, loading]);
+
 
     const [menu, setMenu] = useState({
         visible: false,
         x: 0,
         y: 0,
+        channel:-1,
     });
 
     const imgRef = useRef(null);
 
-    const {me, loading} = useAuth();
+    useEffect(() => {
+        const script = document.createElement("script");
+        const appkey = KAKAO_MAP_API_KEY || "215819b4115f72be72f45137965dbc9e";
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appkey}&libraries=services,clusterer,drawing&autoload=false`;
+        script.async = true;
+
+        script.onload = () => {
+            if (window.kakao && window.kakao.maps) {
+                window.kakao.maps.load(() => setIsKakaoMapLoaded(true));
+            }
+        };
+
+        document.head.appendChild(script);
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, [KAKAO_MAP_API_KEY]);
+    /* 로그인 후 카메라 목록 */
+    useEffect(() => {
+        if (me?.id && !loading) {
+            getCamList();
+        }
+    }, [me, loading]);
+
+    /* 맵 초기화/업데이트: selectedCoords 변경 시 */
+    useEffect(() => {
+        if (showMap && selectedCoords && isKakaoMapLoaded) {
+            const container = document.getElementById("map-canvas");
+            if (!container) return;
+
+            // Kakao LatLng: (lat, lng) = (위도, 경도)
+            const center = new window.kakao.maps.LatLng(
+                selectedCoords.lat,
+                selectedCoords.lng
+            );
+
+            const options = {center, level: 3};
+            const map = new window.kakao.maps.Map(container, options);
+
+            const marker = new window.kakao.maps.Marker({position: center});
+            marker.setMap(map);
+        }
+    }, [showMap, selectedCoords, isKakaoMapLoaded]);
+
 
     const wsRef = useRef(null);
 
     const [focusedArea, setFocusedArea] = useState(null);
+    useEffect(() => {
+        const script = document.createElement("script");
+        const appkey = KAKAO_MAP_API_KEY || "215819b4115f72be72f45137965dbc9e";
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appkey}&libraries=services,clusterer,drawing&autoload=false`;
+        script.async = true;
+
+        script.onload = () => {
+            if (window.kakao && window.kakao.maps) {
+                window.kakao.maps.load(() => setIsKakaoMapLoaded(true));
+            }
+        };
+
+        document.head.appendChild(script);
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, [KAKAO_MAP_API_KEY]);
+    const loadMap = (cam) => {
+        // (lat=coordy, lng=coordx)로 교정
+        setSelectedCoords({lat: cam?.coordy, lng: cam?.coordx});
+        setShowMap(true);
+    };
+    const onOverlayClick = () => setShowMap(false);
+    const stopPropagation = (e) => e.stopPropagation();
 
 
     useEffect(() => {
-
         if (!imgRef.current || !me?.id) return;
-
-        if (wsRef.current) return; // 이미 연결되어 있으면 재생성 방지
-
+        if (wsRef.current) return;
 
         const ws = new WebSocket("ws://localhost:8080/ws/rtsp");
-
         wsRef.current = ws;
 
-
         ws.onopen = () => {
-
             ws.send(`${me.id}`);
-
             console.log("WebSocket connected");
-
         };
-
 
         ws.onmessage = (event) => {
-
             if (imgRef.current) {
-
-//console.log(event);
-
                 imgRef.current.src = "data:image/jpeg;base64," + event.data;
-
             }
-
         };
-
 
         ws.onclose = () => console.log("WebSocket closed");
-
         ws.onerror = (e) => console.log("WebSocket error", e);
 
-
         return () => {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
+            }
+            wsRef.current = null; // ref 초기화
+        };
+    }, [me]);
 
-            if (ws.readyState === WebSocket.OPEN) ws.close();
-
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
+            }
         };
 
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, []);
 
-
-    }, [me]);
 
     useEffect(() => {
         const handleEsc = (e) => {
@@ -82,10 +168,27 @@ const CameraFeed = () => {
 
     const handleContextMenu = (e) => {
         e.preventDefault();
-        setMenu({
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const nx = x / rect.width;
+        const ny = y / rect.height;
+
+        const col = Math.min(2, Math.max(0, Math.floor(nx * 3)));
+        const row = Math.min(2, Math.max(0, Math.floor(ny * 3)));
+
+        console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
+        focusedArea ? setMenu({
             visible: true,
             x: e.pageX-300,
             y: e.pageY-50,
+            channel: 3*focusedArea.row+focusedArea.col,
+        }) : setMenu({
+            visible: true,
+            x: e.pageX-300,
+            y: e.pageY-50,
+            channel: 3*row+col,
         });
     };
 
@@ -160,11 +263,32 @@ const CameraFeed = () => {
                         </li>
                         <li
                             style={{ padding: "8px 16px", cursor: "pointer", color: "#333"}}
-                            onClick={() => alert("메뉴 3 실행")}
+                            onClick={() => {
+                                loadMap(camList[menu.channel]);
+                                setMenu({ ...menu, visible: false });
+                            }}
                         >
                             지도 보기
                         </li>
                     </ul>
+                </div>
+            )}
+            {/* 지도 모달 오버레이 */}
+            {showMap && (
+                <div className="map-overlay" onClick={onOverlayClick}>
+                    <div className="map-modal" onClick={stopPropagation}>
+                        <div className="map-box">
+                            <div id="map-canvas" className="map-canvas"/>
+                        </div>
+                        <button
+                            className="map-close"
+                            onClick={() => setShowMap(false)}
+                            aria-label="지도 닫기"
+                            title="닫기"
+                        >
+                            <img src={closeIcon} alt="닫기" draggable="false"/>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

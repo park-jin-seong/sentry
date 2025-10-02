@@ -74,7 +74,7 @@ public class FrameSocketThreadClass {
                 dos.flush();
 
 
-                while (true) {
+                while (m_running) {
                     try {
                         Thread.sleep(1);
                         byte[] lenBytes = new byte[4];
