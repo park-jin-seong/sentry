@@ -10,9 +10,9 @@ import lombok.*;
 public class UserAuthority {
 
     @Id
-    @Column(name = "userId", nullable = false)  // DB 컬럼명과 정확히 맞춤
+    @Column(name = "userId", nullable = false)
     private long userId;
 
     @Column(name = "authority", length = 45, nullable = false)
-    private String authority;  // 예: ADMIN / OWNER / MASTER / OBSERVER 등
+    private String authority;
 }

@@ -37,7 +37,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
             try {
                 streamFrames(session, frameSocketThreadClass);
             } catch (Exception e) {
-                throw new RuntimeException("망");
+                throw new RuntimeException();
             }
         }).start();
     }
@@ -49,7 +49,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
             try {
                 String base64Frame = frameSocketThreadClass.getLatestFrameBase64();
                 session.sendMessage(new TextMessage(base64Frame));
-                Thread.sleep(10); // TODO: grabber.getFrameRate() 반영 가능
+                Thread.sleep(10);
             } catch (Exception e) {
                 e.printStackTrace();
                 break;

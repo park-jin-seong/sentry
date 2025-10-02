@@ -68,7 +68,6 @@ public class ImageService {
             }
 
         } catch (Exception e) {
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>" + e.getMessage());
             return Optional.empty();
         }
     }
