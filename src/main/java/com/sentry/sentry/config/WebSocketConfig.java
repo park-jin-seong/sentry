@@ -62,7 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,WebSock
 //    }
 //    @Override
 //    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//        // 단일 엔드포인트, 채널은 쿼리 파라미터로 전달
+//
 //        registry.addHandler(rtspWebSocketHandler, "/ws/rtsp")
 //                .setAllowedOrigins("*");
 //    }

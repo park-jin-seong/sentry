@@ -36,6 +36,8 @@ public class QCameraInfos extends EntityPathBase<CameraInfos> {
 
     public final BooleanPath isAnalisis = createBoolean("isAnalisis");
 
+    public final NumberPath<Long> ownerUserId = createNumber("ownerUserId", Long.class);
+
     public QCameraInfos(String variable) {
         this(CameraInfos.class, forVariable(variable), INITS);
     }
