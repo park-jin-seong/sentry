@@ -33,13 +33,4 @@ public class Userinfo {
     private List<RoomUser> roomUsers;
 
 
-//    // 권한 설정을 위한 ..
-//    public enum Role {
-//        MASTER, OWNER, OBSERVER
-//    }
-//
-//    // 빠진 필드 추가 (DB 컬럼 필요)
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "role", length = 20, nullable = false)
-//    private Role role;
 }

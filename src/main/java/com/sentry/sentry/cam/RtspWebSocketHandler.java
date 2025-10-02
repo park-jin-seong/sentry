@@ -38,7 +38,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
             try {
                 streamFrames(session, frameSocketThreadClass);
             } catch (Exception e) {
-                throw new RuntimeException("망");
+                throw new RuntimeException();
             }
         }).start();
     }

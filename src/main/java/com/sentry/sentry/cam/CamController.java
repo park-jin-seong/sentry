@@ -55,8 +55,6 @@ public class CamController {
         List<CameraInfosDTO> allCameraInfosDTO = allCameraInfos.stream()
                 .map(c -> new CameraInfosDTO(c, userId))
                 .collect(Collectors.toList());
-
-        System.out.println("allCameraInfosDTO = " + allCameraInfosDTO);
         return allCameraInfosDTO;
     }
 
@@ -160,13 +158,10 @@ public class CamController {
     @GetMapping("/list-byName")
     public List<CameraInfosDTO> getCameraInfosByName(@RequestParam(required = false) String cameraName) {
         List<CameraInfos> allCameraInfos = camService.getCameraInfosByName(cameraName);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>" + cameraName);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>" + allCameraInfos);
         List<CameraInfosDTO> allCameraInfosDTO = allCameraInfos.stream()
                 .map(CameraInfosDTO::new)
                 .collect(Collectors.toList());
 
-        System.out.println("allCameraInfosDTO = " + allCameraInfosDTO);
         return allCameraInfosDTO;
     }
 

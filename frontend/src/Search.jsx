@@ -31,6 +31,8 @@ const Search = () => {
     const [hasMore, setHasMore] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [selectedImage, setSelectedImage] = useState(null);
+
     const isObserver = !!me?.roles?.includes?.("ROLE_OBSERVER");
 
     const onLogout = async () => {
@@ -282,7 +284,8 @@ const Search = () => {
                                 const eventResultTime = result.eventOccurTime.substring(0, 19).replace('T', ' ');
 
                                 return (
-                                    <div key={index} className="event-result-item">
+                                    <div key={index} className="event-result-item"
+                                         onDoubleClick={() => setSelectedImage(result)}>
                                         <div className="image-id-info">
                                             {result.cameraName}
                                         </div>
@@ -319,6 +322,21 @@ const Search = () => {
                     )}
                 </main>
             </div>
+            {selectedImage && (
+                <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <img
+                            src={`/api/image/stream/${selectedImage.eventResultId}`}
+                            alt="Full View"
+                            className="modal-image"
+                        />
+                        <p className="modal-text">{selectedImage.cameraName}</p>
+                        
+                        <p>{selectedImage.eventOccurTime.substring(0, 19).replace('T', ' ')}</p>
+                        <button className="modal-close" onClick={() => setSelectedImage(null)}>닫기</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
