@@ -41,9 +41,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
                 throw new RuntimeException();
             }
         }).start();
-    }
-
-    private void streamFrames(WebSocketSession session, FrameSocketThreadClass frameThread) throws InterruptedException {
+    }private void streamFrames(WebSocketSession session, FrameSocketThreadClass frameThread) throws InterruptedException {
         frameThread.Start();
         try {
             while (session.isOpen()) {
