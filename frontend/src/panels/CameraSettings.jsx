@@ -17,6 +17,7 @@ export default function CameraSettings() {
     const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(null);
     const [infoTarget, setInfoTarget] = useState(null);
+    const [selectedIds, setSelectedIds] = useState(new Set());
 
     const { me, loading: authLoading } = useAuth();
     const USER_ID = me?.id ?? null;
@@ -154,6 +155,37 @@ export default function CameraSettings() {
         }
     };
 
+/** 체크박스 선택/해제 */
+const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+        return newSet;
+    });
+};
+
+/** 선택된 카메라 모두 삭제 */
+const deleteSelected = async () => {
+    if (selectedIds.size === 0) {
+        alert("삭제할 카메라를 선택하세요.");
+        return;
+    }
+    if (!window.confirm(`선택된 ${selectedIds.size}개를 삭제하시겠습니까?`)) return;
+
+    try {
+        for (const id of selectedIds) {
+            const r = await api(`/api/camera/${id}?userId=${USER_ID}`, { method: "DELETE" });
+            if (!r.ok) console.warn(`삭제 실패: ${id}`);
+        }
+        alert("삭제 완료되었습니다.");
+        setSelectedIds(new Set());
+        await loadAll();
+    } catch (e) {
+        alert("삭제 중 오류가 발생했습니다: " + e.message);
+    }
+};
+
+
     return (
         <div className="camera-settings">
             <div className="settings-block">
@@ -172,6 +204,9 @@ export default function CameraSettings() {
                         <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
                             추가
                         </button>
+                        <button className="btn btn-danger" onClick={deleteSelected}>
+                            삭제
+                        </button>
                         <div className="col-actions" />
                     </div>
 
@@ -189,6 +224,12 @@ export default function CameraSettings() {
                             items.map((it) => (
                                 <div className="camera-row" key={it.id}>
                                     <div className="col-name">
+                                        <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(it.id)}
+                                                onChange={() => toggleSelect(it.id)}
+                                                style={{ marginRight: 8 }}
+                                            />
                                         <span className="camera-name">{it.name}</span>
                                         {!it.isOwner && (
                                             <span
@@ -205,12 +246,8 @@ export default function CameraSettings() {
                                                 <button className="btn" onClick={() => onEdit(it)}>
                                                     수정
                                                 </button>
-                                                <button
-                                                    className="btn btn-danger"
-                                                    onClick={() => onDelete(it.id)}
-                                                >
-                                                    삭제
-                                                </button>
+
+
                                             </>
                                         ) : (
                                             <button className="btn" onClick={() => setInfoTarget(it)}>
