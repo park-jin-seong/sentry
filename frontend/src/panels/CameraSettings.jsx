@@ -4,6 +4,7 @@ import { api } from "../lib/api.js";
 import toggleOn from "../assets/toggleon.png";
 import toggleOff from "../assets/toggleoff.png";
 import { useAuth } from "../auth.jsx";
+import "./CameraSettings.css";
 
 /** 안전 숫자 변환 */
 const toNum = (v, fb = 0) => {
@@ -170,12 +171,21 @@ const deleteSelected = async () => {
         alert("삭제할 카메라를 선택하세요.");
         return;
     }
-    if (!window.confirm(`선택된 ${selectedIds.size}개를 삭제하시겠습니까?`)) return;
+
+    // ✅ 내 카메라만 삭제 가능
+    const mySelected = items.filter((it) => selectedIds.has(it.id) && it.isOwner);
+
+    if (mySelected.length === 0) {
+        alert("본인이 올린 카메라만 삭제할 수 있습니다.");
+        return;
+    }
+
+    if (!window.confirm(`내 카메라 ${mySelected.length}개를 삭제하시겠습니까?`)) return;
 
     try {
-        for (const id of selectedIds) {
-            const r = await api(`/api/camera/${id}?userId=${USER_ID}`, { method: "DELETE" });
-            if (!r.ok) console.warn(`삭제 실패: ${id}`);
+        for (const it of mySelected) {
+            const r = await api(`/api/camera/${it.id}?userId=${USER_ID}`, { method: "DELETE" });
+            if (!r.ok) console.warn(`삭제 실패: ${it.id}`);
         }
         alert("삭제 완료되었습니다.");
         setSelectedIds(new Set());
@@ -184,6 +194,23 @@ const deleteSelected = async () => {
         alert("삭제 중 오류가 발생했습니다: " + e.message);
     }
 };
+
+
+/** 전체 선택 / 해제 */
+const toggleSelectAll = () => {
+    // 전체 선택된 항목(내 것만 기준)
+    const myItems = items.filter((it) => it.isOwner);
+
+    if (selectedIds.size === myItems.length) {
+        // 이미 내 모든 카메라가 선택됨 → 해제
+        setSelectedIds(new Set());
+    } else {
+        // 내 카메라만 전체 선택
+        setSelectedIds(new Set(myItems.map((it) => it.id)));
+    }
+};
+
+
 
 
     return (
@@ -204,6 +231,9 @@ const deleteSelected = async () => {
                         <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
                             추가
                         </button>
+                        <button className="btn btn-secondary" onClick={toggleSelectAll}>
+                            {selectedIds.size === items.length ? "전체 해제" : "전체 선택"}
+                        </button>
                         <button className="btn btn-danger" onClick={deleteSelected}>
                             삭제
                         </button>
@@ -223,23 +253,26 @@ const deleteSelected = async () => {
                             !loading &&
                             items.map((it) => (
                                 <div className="camera-row" key={it.id}>
-                                    <div className="col-name">
-                                        <input
-                                                type="checkbox"
-                                                checked={selectedIds.has(it.id)}
-                                                onChange={() => toggleSelect(it.id)}
-                                                style={{ marginRight: 8 }}
-                                            />
-                                        <span className="camera-name">{it.name}</span>
-                                        {!it.isOwner && (
-                                            <span
-                                                className="tag"
-                                                style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}
-                                            >
-                                                (업로더: {it.ownerName || it.ownerUserId || "알 수 없음"})
-                                            </span>
-                                        )}
-                                    </div>
+                                   <div className="col-name">
+                                       {it.isOwner && (
+                                           <input
+                                               type="checkbox"
+                                               checked={selectedIds.has(it.id)}
+                                               onChange={() => toggleSelect(it.id)}
+                                               style={{ marginRight: 8 }}
+                                           />
+                                       )}
+                                       <span className="camera-name">{it.name}</span>
+                                       {!it.isOwner && (
+                                           <span
+                                               className="tag"
+                                               style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}
+                                           >
+                                               (업로더: {it.ownerName || it.ownerUserId || "알 수 없음"})
+                                           </span>
+                                       )}
+                                   </div>
+
                                     <div className="col-actions" style={{ display: "flex", gap: 8 }}>
                                         {it.isOwner ? (
                                             <>
