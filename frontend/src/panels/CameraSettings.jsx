@@ -172,7 +172,7 @@ const deleteSelected = async () => {
         return;
     }
 
-    // ✅ 내 카메라만 삭제 가능
+    // 내 카메라만 삭제 가능
     const mySelected = items.filter((it) => selectedIds.has(it.id) && it.isOwner);
 
     if (mySelected.length === 0) {
