@@ -234,19 +234,25 @@ const CameraFeed = () => {
 
     /** 전체화면 진입 */
     const enterFullscreen = () => {
+        const videoFrame = document.getElementById("videoFrame0");
         if (containerRef.current) {
             if (containerRef.current.requestFullscreen) {
                 containerRef.current.requestFullscreen();
             } else if (containerRef.current.webkitRequestFullscreen) { // Safari 지원
                 containerRef.current.webkitRequestFullscreen();
             }
+            videoFrame.style.width = "100%";
+            videoFrame.style.height = "100%";
         }
     };
 
     /** 전체화면 종료 */
     const exitFullscreen = () => {
+        const videoFrame = document.getElementById("videoFrame0");
         if (document.fullscreenElement) {
             document.exitFullscreen();
+            videoFrame.style.width = "calc(100% - 18px)";
+            videoFrame.style.height = "calc(100% - 60px)";
         }
     };
 
@@ -258,8 +264,8 @@ const CameraFeed = () => {
                 id="videoFrame0"
                 alt="camera feed"
                 style={{
-                    width: "calc(100% - 28.5px)",
-                    height: "100%",
+                    width: "calc(100% - 18px)",
+                    height: "calc(100% - 60px)",
                     transition: "transform 0.3s ease",
                     transform: focusedArea
                         ? `scale(3) translate(-${focusedArea.col * (100 / 3)}%, -${focusedArea.row * (100 / 3)}%)`

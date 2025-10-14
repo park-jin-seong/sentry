@@ -52,11 +52,12 @@ export default function App() {
                     {/* TopBar 보이는 구간 */}
                     <Route element={<LayoutWithTopBar />}>
                         <Route path="/home" element={<Home />} />
-                        <Route path="/search" element={<Search />} />
+
                         {/* 도움말 임시페이지임 */}
                         <Route path="/help" element={<div className="content-area">도움말</div>} />
                         <Route path="/chat" element={<Chat />} />
                     </Route>
+                    <Route path="/search" element={<Search />} />
 
                     {/* TopBar 숨기는 구간 (설정) */}
                     <Route element={<LayoutBare />}>

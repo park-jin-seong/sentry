@@ -217,17 +217,17 @@ const Search = () => {
 
     return (
         <div className="app-container">
-            {/*<header className="top-bar">*/}
-            {/*    <div className="logo-container">*/}
-            {/*        <img src={sentryLogo} alt="SENTRY" className="logo-img" onClick={() => navigate('/home')}/>*/}
-            {/*    </div>*/}
-            {/*    <nav className="nav-menu">*/}
-            {/*        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>*/}
-            {/*        <a href="#" className="nav-item">도움말</a>*/}
-            {/*        <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate(isObserver ? "/settings?tab=chat" : "/settings"); }}>{isObserver ? "채팅 설정" : "설정"}</a>*/}
-            {/*        <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>*/}
-            {/*    </nav>*/}
-            {/*</header>*/}
+            <header className="top-bar">
+                <div className="logo-container">
+                    <img src={sentryLogo} alt="SENTRY" className="logo-img" onClick={() => navigate('/home')}/>
+                </div>
+                <nav className="nav-menu">
+                    <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/search"); }}>검색</a>
+                    <a href="#" className="nav-item">도움말</a>
+                    <a href="#" className="nav-item" onClick={(e) => { e.preventDefault(); navigate(isObserver ? "/settings?tab=chat" : "/settings"); }}>{isObserver ? "채팅 설정" : "설정"}</a>
+                    <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>
+                </nav>
+            </header>
 
             <div className="main-content">
                 <aside className="sidebar">
@@ -331,7 +331,7 @@ const Search = () => {
                             className="modal-image"
                         />
                         <p className="modal-text">{selectedImage.cameraName}</p>
-                        
+
                         <p>{selectedImage.eventOccurTime.substring(0, 19).replace('T', ' ')}</p>
                         <button className="modal-close" onClick={() => setSelectedImage(null)}>닫기</button>
                     </div>

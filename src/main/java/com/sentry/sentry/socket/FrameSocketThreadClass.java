@@ -30,7 +30,7 @@ public class FrameSocketThreadClass {
         m_thread = new Thread(() ->{
             Run();
         });
-        frameQueues = new LinkedBlockingQueue<>(10);
+        frameQueues = new LinkedBlockingQueue<>(2);
     }
     public void Start()
     {
@@ -76,7 +76,7 @@ public class FrameSocketThreadClass {
 
                 while (m_running) {
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(10);
                         byte[] lenBytes = new byte[4];
                         dis.readFully(lenBytes); // 정확히 4바이트 채움
 

@@ -47,7 +47,7 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
             while (session.isOpen()) {
                 String frame = frameThread.getLatestFrameBase64();
                 session.sendMessage(new TextMessage(frame));
-                Thread.sleep(1);
+                Thread.sleep(10);
             }
         } catch (Exception e) {
             e.printStackTrace();
