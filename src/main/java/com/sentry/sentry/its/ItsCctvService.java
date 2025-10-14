@@ -10,7 +10,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class ItsCctvService {
 
-    /** 도로 타입 */
     public enum RoadType {
         EX("ex"),   // 고속도로
         ITS("its"); // 국도
@@ -40,7 +39,6 @@ public class ItsCctvService {
         this.rest = RestClient.builder().baseUrl(baseUrl).build();
     }
 
-    /** 문자열 type(ex|its) 받는 편의 메서드 */
     public ItsCctvResponse search(
             String roadType, int cctvType,
             double minX, double maxX, double minY, double maxY
@@ -48,14 +46,13 @@ public class ItsCctvService {
         return search(RoadType.from(roadType), cctvType, minX, maxX, minY, maxY);
     }
 
-    /** Enum type 받는 본 메서드 */
     public ItsCctvResponse search(
             RoadType type, int cctvType,
             double minX, double maxX, double minY, double maxY
     ) {
         String uri = UriComponentsBuilder.fromPath("/cctvInfo")
                 .queryParam("apiKey", apiKey)
-                .queryParam("type", type.code())   // ★ 선택된 타입 적용
+                .queryParam("type", type.code())
                 .queryParam("cctvType", cctvType)
                 .queryParam("minX", minX)
                 .queryParam("maxX", maxX)

@@ -52,14 +52,13 @@ public class RtspWebSocketHandler extends TextWebSocketHandler {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            frameThread.Stop(); // 클라이언트 종료 시 grabber 종료
+            frameThread.Stop();
             System.out.println("Streaming thread 종료: " + session.getId());
         }
     }
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         System.out.println("WebSocket closed: " + session.getId() + " 상태: " + status);
-        // session 종료 시 관련 FrameSocketThreadClass 종료
     }
 
 }

@@ -31,9 +31,7 @@ const CameraFeed = () => {
         try {
             const res = await axios.get(`/api/cam/list-byUserId?userId=${me.id}`);
             setCamList(res.data);
-            console.log("카메라 목록:", res.data);
         } catch (err) {
-            console.error("API 호출 실패", err);
         }
     };
 
@@ -78,13 +76,11 @@ const CameraFeed = () => {
         }
     }, [me, loading]);
 
-    /* 맵 초기화/업데이트: selectedCoords 변경 시 */
     useEffect(() => {
         if (showMap && selectedCoords && isKakaoMapLoaded) {
             const container = document.getElementById("map-canvas");
             if (!container) return;
 
-            // Kakao LatLng: (lat, lng) = (위도, 경도)
             const center = new window.kakao.maps.LatLng(
                 selectedCoords.lat,
                 selectedCoords.lng
@@ -120,7 +116,6 @@ const CameraFeed = () => {
         };
     }, [KAKAO_MAP_API_KEY]);
     const loadMap = (cam) => {
-        // (lat=coordy, lng=coordx)로 교정
         setSelectedCoords({lat: cam?.coordy, lng: cam?.coordx});
         setShowMap(true);
     };
@@ -137,7 +132,6 @@ const CameraFeed = () => {
 
         ws.onopen = () => {
             ws.send(`${me.id}`);
-            console.log("WebSocket connected");
         };
 
         ws.onmessage = (event) => {
@@ -195,7 +189,6 @@ const CameraFeed = () => {
         const col = Math.min(2, Math.max(0, Math.floor(nx * 3)));
         const row = Math.min(2, Math.max(0, Math.floor(ny * 3)));
 
-        console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
         focusedArea ? setMenu({
             visible: true,
             x: e.pageX - offsetX,
@@ -225,14 +218,12 @@ const CameraFeed = () => {
         const col = Math.min(2, Math.max(0, Math.floor(nx * 3)));
         const row = Math.min(2, Math.max(0, Math.floor(ny * 3)));
 
-        console.log(`선택된 카메라 위치: row=${row}, col=${col}`);
         setFocusedArea({row, col});
     };
 
     const resetZoom = () => setFocusedArea(null);
 
 
-    /** 전체화면 진입 */
     const enterFullscreen = () => {
         const videoFrame = document.getElementById("videoFrame0");
         if (containerRef.current) {
@@ -246,7 +237,6 @@ const CameraFeed = () => {
         }
     };
 
-    /** 전체화면 종료 */
     const exitFullscreen = () => {
         const videoFrame = document.getElementById("videoFrame0");
         if (document.fullscreenElement) {
@@ -379,71 +369,3 @@ const CameraFeed = () => {
 };
 export default CameraFeed;
 
-
-// import { useEffect, useRef, useState } from "react"; // useState import
-// import { useAuth } from "./auth.jsx";
-//
-// const CameraFeed = () => {
-//     const imgRef = useRef(null);
-//     const { me, loading } = useAuth();
-//     const wsRef = useRef(null);
-//     const [isStreaming, setIsStreaming] = useState(false); // 스트리밍 상태 추가
-//
-//     useEffect(() => {
-//         if (!imgRef.current || !me?.id) return;
-//         if (wsRef.current) return;
-//
-//         const ws = new WebSocket("ws://localhost:8080/ws/rtsp");
-//         wsRef.current = ws;
-//
-//         ws.onopen = () => {
-//             ws.send(`${me.id}`);
-//             setIsStreaming(true); // 연결 성공 시 스트리밍 시작 상태로 변경
-//             console.log("WebSocket connected");
-//         };
-//
-//         ws.onmessage = (event) => {
-//             if (imgRef.current) {
-//                 imgRef.current.src = "data:image/jpeg;base64," + event.data;
-//             }
-//         };
-//
-//         ws.onclose = () => {
-//             console.log("WebSocket closed");
-//             setIsStreaming(false); // 연결 끊어짐 시 스트리밍 종료 상태로 변경
-//         };
-//
-//         ws.onerror = (e) => {
-//             console.log("WebSocket error", e);
-//             setIsStreaming(false); // 에러 발생 시 스트리밍 종료
-//         };
-//
-//         return () => {
-//             if (ws.readyState === WebSocket.OPEN) ws.close();
-//             setIsStreaming(false); // 컴포넌트 언마운트 시 스트리밍 종료
-//         };
-//     }, [me]);
-//
-//     // 조건부 렌더링을 사용하여 상태에 따라 다른 화면을 표시합니다.
-//     return (
-//         <div style={{ position: "relative", width: "100%", height: "100%" }}>
-//             {isStreaming ? (
-//                 <img ref={imgRef} id="videoFrame0" alt="camera feed" style={{ width: "100%", height: "100%" }} />
-//             ) : (
-//                 <div style={{
-//                     position: "absolute",
-//                     top: "50%",
-//                     left: "50%",
-//                     transform: "translate(-50%, -50%)",
-//                     color: "red",
-//                     fontSize: "24px",
-//                     fontWeight: "bold"
-//                 }}>
-//                     서버 대기중
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-//
-// export default CameraFeed;

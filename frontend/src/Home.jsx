@@ -34,7 +34,6 @@ const Home = () => {
         }
     };
 
-    /* Kakao Map SDK 로드 */
     useEffect(() => {
         const script = document.createElement("script");
         const appkey = KAKAO_MAP_API_KEY || "215819b4115f72be72f45137965dbc9e";
@@ -53,20 +52,17 @@ const Home = () => {
         };
     }, [KAKAO_MAP_API_KEY]);
 
-    /* 로그인 후 카메라 목록 */
     useEffect(() => {
         if (me?.id && !loading) {
             getCamList();
         }
     }, [me, loading]);
 
-    /* 맵 초기화/업데이트: selectedCoords 변경 시 */
     useEffect(() => {
         if (showMap && selectedCoords && isKakaoMapLoaded) {
             const container = document.getElementById("map-canvas");
             if (!container) return;
 
-            // Kakao LatLng: (lat, lng) = (위도, 경도)
             const center = new window.kakao.maps.LatLng(
                 selectedCoords.lat,
                 selectedCoords.lng
@@ -92,47 +88,15 @@ const Home = () => {
     };
 
     const loadMap = (cam) => {
-        // (lat=coordy, lng=coordx)로 교정
         setSelectedCoords({lat: cam?.coordy, lng: cam?.coordx});
         setShowMap(true);
     };
 
-    // 오버레이 클릭 시 닫힘 (모달 내부 클릭은 유지)
     const onOverlayClick = () => setShowMap(false);
     const stopPropagation = (e) => e.stopPropagation();
 
     return (
         <div className="app-container">
-            {/*<header className="top-bar">*/}
-            {/*    <div className="logo-container">*/}
-            {/*        <img src={sentryLogo} alt="SENTRY" className="logo-img" onClick={() => window.location.reload()}/>*/}
-            {/*    </div>*/}
-
-            {/*    <nav className="nav-menu">*/}
-            {/*        <a*/}
-            {/*            href="#"*/}
-            {/*            className="nav-item"*/}
-            {/*            onClick={(e) => {*/}
-            {/*                e.preventDefault();*/}
-            {/*                navigate("/search");*/}
-            {/*            }}*/}
-            {/*        >*/}
-            {/*            검색*/}
-            {/*        </a>*/}
-            {/*        <a href="#" className="nav-item">도움말</a>*/}
-            {/*        <a*/}
-            {/*            href="#"*/}
-            {/*            className="nav-item"*/}
-            {/*            onClick={(e) => {*/}
-            {/*                e.preventDefault();*/}
-            {/*                navigate(isObserver ? "/settings?tab=chat" : "/settings");*/}
-            {/*            }}*/}
-            {/*        >*/}
-            {/*            {isObserver ? "채팅 설정" : "설정"}*/}
-            {/*        </a>*/}
-            {/*        <a href="#" className="nav-item" onClick={onLogout}>로그아웃</a>*/}
-            {/*    </nav>*/}
-            {/*</header>*/}
 
             <div className="main-content">
                 <aside className="sidebar">
@@ -153,10 +117,7 @@ const Home = () => {
                 </aside>
 
                 <main className="content-area">
-                    {/* CameraFeed 전체 화면으로 덮음 (CSS에서 absolute inset:0) */}
                     <CameraFeed/>
-
-                    {/* 지도 모달 오버레이 */}
                     {showMap && (
                         <div className="map-overlay" onClick={onOverlayClick}>
                             <div className="map-modal" onClick={stopPropagation}>
@@ -177,7 +138,6 @@ const Home = () => {
                 </main>
             </div>
 
-            {/* 우측 챗 패널 */}
             <div className={`collapsible-bar ${isSidebarOpen ? "open" : ""}`}>
                 <button className="toggle-btn" onClick={toggleSidebar}>
                     <div className="bar">

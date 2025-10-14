@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return CustomUserDetails.of(
                 u.getId(),
                 u.getUsername(),
-                u.getUserpassword(),   // BCrypt 해시
+                u.getUserpassword(),
                 auths
         );
     }

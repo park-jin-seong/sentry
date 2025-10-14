@@ -26,7 +26,6 @@ public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> 
 
     Optional<CameraInfos> findByCctvUrl(String cctvUrl);
 
-    // 리스트: analysisServerId가 null이거나 특정 serverId인 카메라만
     @Query(value = """
         SELECT  c.* 
         FROM    sentry_server.camerainfos c
@@ -36,7 +35,6 @@ public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> 
         """, nativeQuery = true)
     List<CameraInfos> findAssignable(@Param("serverId") Integer serverId);
 
-    // 일괄 배정
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(value = """
         UPDATE sentry_server.camerainfos
@@ -46,7 +44,6 @@ public interface CameraInfosRepository extends JpaRepository<CameraInfos, Long> 
     int bulkAssignToServer(@Param("serverId") Integer serverId,
                            @Param("ids") Collection<Long> ids);
 
-    // 카메라 배정 해제
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(value = """
     UPDATE sentry_server.camerainfos

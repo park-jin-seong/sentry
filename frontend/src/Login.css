@@ -116,7 +116,6 @@ body{
     .login-left{ padding:32px 24px; }
 }
 
-/*브라우저가 자동완성 해제 css*/
 .login-input:-webkit-autofill,
 .login-input:-webkit-autofill:hover,
 .login-input:-webkit-autofill:focus,
@@ -126,7 +125,6 @@ body{
     transition: background-color 5000s ease-in-out 0s;
 }
 
-/* 기존 스타일 유지 + 아래 추가 */
 
 .password-wrapper {
     position: relative;
@@ -134,9 +132,9 @@ body{
 }
 
 .password-wrapper .login-input {
-    width: 100%;              /* 아이디 input과 동일 폭 */
-    padding-right: 40px;      /* 아이콘 공간 확보 */
-    box-sizing: border-box;   /* padding 포함한 폭 계산 */
+    width: 100%;
+    padding-right: 40px;
+    box-sizing: border-box;
 }
 
 .password-toggle {

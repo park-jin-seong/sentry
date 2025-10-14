@@ -31,21 +31,6 @@ public class ChatController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
 
-//    @MessageMapping("/{roomId}")
-//    @SendTo("/room/{roomId}")
-//    public MessageDTO sendMessage(@Payload MessageDTO messageDTO, @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable String roomId) {
-//        if(customUserDetails.getId() == null){
-//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>사용자id null");
-//        }
-//        messageDTO.setSenderId(customUserDetails.getId());
-//        messageDTO.setCreatedAt(LocalDateTime.now());
-//        Message savedMessage = chatService.saveMessage(messageDTO);
-//        MessageDTO returnMessageDTO = chatService.convertMessageDTO(savedMessage);
-//        returnMessageDTO.setOptimisticId(messageDTO.getOptimisticId());
-//        return returnMessageDTO;
-//    }
-
-    // 새로 작성
     @MessageMapping("/chat/{roomId}")   // 클라 전송: /send/chat/{roomId}
     public void sendMessage(@Payload MessageDTO messageDTO,
                             @DestinationVariable Long roomId,

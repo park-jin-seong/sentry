@@ -24,7 +24,6 @@ public class ServerInfoController {
         return serverInfoService.getServerInfo(type);
     }
 
-    /** 전체 서버 목록 조회 */
     @GetMapping({"", "/Analysis"})
     public List<ServerInfo> getAnalysis() {
         return serverInfoService.getAllServersByServerType("Analysis");

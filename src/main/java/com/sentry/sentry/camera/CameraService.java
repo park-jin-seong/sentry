@@ -22,7 +22,6 @@ public class CameraService {
     private final UserAuthorityRepository userAuthorityRepository;
     private final UserinfoRepository userinfoRepository; // 주입 추가
 
-    /** 사용자에게 할당된 카메라 목록 */
     @Transactional(readOnly = true)
     public List<CameraInfos> listAssigned(Long userId) {
         var ids = assignRepo.findByUserId(userId).stream()
@@ -64,7 +63,6 @@ public class CameraService {
         return saved;
     }
 
-    /** 오너만 수정 허용 */
     @Transactional
     public CameraInfos updateCameraOwned(Long cameraId, Long userId, CameraUpdateReq req) {
         var c = infoRepo.findById(cameraId)
@@ -79,7 +77,6 @@ public class CameraService {
         return infoRepo.save(c);
     }
 
-    /** 오너면 하드삭제, 비오너면 내 매핑만 해제 */
     @Transactional
     public void deleteOrUnassign(Long cameraId, Long userId) {
         var c = infoRepo.findById(cameraId)
@@ -93,7 +90,6 @@ public class CameraService {
         }
     }
 
-    /** 프론트 전송용 요청 DTO */
     public record AssignReq(String cctvname, String cctvurl, Double coordx, Double coordy, String cctvformat) {}
     public record CameraUpdateReq(String cameraName, Double coordx, Double coordy, Boolean isAnalisis) {}
 
@@ -115,7 +111,6 @@ public class CameraService {
                 .toList();
     }
 
-    /** username 기반 해제: 서비스에서 트랜잭션으로 처리 */
     @Transactional
     public void unassignByUsername(String username, Long cameraId) {
         var userOpt = userinfoRepository.findByUsername(username);

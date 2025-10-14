@@ -28,13 +28,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
-        // 이미 인증됨 → 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
             return;
         }
 
-        // 공개 경로/프리플라이트 → 패스
         String path = req.getRequestURI();
         if ("OPTIONS".equalsIgnoreCase(req.getMethod()) || path.startsWith("/api/auth/")) {
             chain.doFilter(req, res);
@@ -47,8 +45,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null) {
             log.debug("[JwtAuthFilter] Authorization 헤더 감지, 일부 토큰 로그: {}", token.substring(0, Math.min(12, token.length())));
             if (!jwtUtil.validate(token) || jwtUtil.isExpired(token)) {
-                log.warn("[JwtAuthFilter] 토큰 유효성/만료 실패 → 401로 이어질 수 있음");
-                // 여기선 체인 계속 → 나중에 401 처리 (EntryPoint)
                 chain.doFilter(req, res);
                 return;
             }

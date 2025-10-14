@@ -39,20 +39,17 @@ public class AuthController {
         log.info("[LOGIN] 요청 username='{}', pwd_len={}", username, userpassword == null ? null : userpassword.length());
 
         try {
-            // ✅ 입력 검증
             if (username == null || username.isBlank() || userpassword == null || userpassword.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "username/userpassword required"));
             }
 
-            // ✅ 스프링 시큐리티 인증
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, userpassword)
             );
             log.info("[LOGIN] 인증 성공: name='{}', authorities={}", auth.getName(), auth.getAuthorities());
 
-            // ✅ 실제 권한 목록에서 roles 구성 (하드코딩 제거)
             List<String> roles = auth.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority) // e.g. ROLE_MASTER
+                    .map(GrantedAuthority::getAuthority)
                     .toList();
 
             String access  = jwt.generateAccessToken(auth.getName(), Map.of("roles", roles));
@@ -88,8 +85,7 @@ public class AuthController {
         }
 
         String username = jwt.getUsername(refresh);
-        // 토큰에 roles 클레임을 넣었으니 그대로 사용(없으면 기본 ROLE_OBSERVER 등)
-        List<String> roles = jwt.getRoles(refresh); // 없으면 jwt에 helper 추가하거나 기본값 사용
+        List<String> roles = jwt.getRoles(refresh);
         if (roles == null || roles.isEmpty()) roles = List.of("ROLE_OBSERVER");
 
         String newAccess = jwt.generateAccessToken(username, Map.of("roles", roles));

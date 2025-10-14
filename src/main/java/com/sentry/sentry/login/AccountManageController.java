@@ -17,13 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * 프론트에서 사용하는 계정 관리 API
- *  - GET    /api/accounts?role=OWNER|OBSERVER          // 목록(필터: MASTER는 OWNER, OWNER는 OBSERVER만)
- *  - POST   /api/accounts/create                       // 생성 {username, userpassword, nickname?}
- *  - PATCH  /api/accounts/{username}/userpassword      // 비번 변경 {userpassword}
- *  - DELETE /api/accounts/{username}                   // 삭제
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/accounts")
@@ -33,7 +26,6 @@ public class AccountManageController {
     private final UserinfoRepository userinfoRepository;
     private final UserAuthorityRepository userAuthorityRepository;
 
-    // 현재 로그인 사용자의 역할을 "MASTER/OWNER/OBSERVER" 문자열로 반환
     private String effectiveRole(CustomUserDetails cud) {
         String r = cud.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority) // ROLE_MASTER ...
@@ -41,7 +33,6 @@ public class AccountManageController {
         return r.replaceFirst("^ROLE_", ""); // MASTER ...
     }
 
-    // 내가 생성/관리할 수 있는 '대상 역할'
     private String nextCreatableRole(String myRole) {
         return switch (myRole) {
             case "MASTER" -> "OWNER";
@@ -50,7 +41,6 @@ public class AccountManageController {
         };
     }
 
-    // === 목록: MASTER → OWNER, OWNER → OBSERVER 만 조회 허용 ===
     @GetMapping
     @PreAuthorize("hasAnyRole('MASTER','OWNER')")
     public List<Map<String, Object>> list(
@@ -60,7 +50,7 @@ public class AccountManageController {
         if (me == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 
         String myRole = effectiveRole(me);
-        String allowed = nextCreatableRole(myRole); // MASTER면 OWNER, OWNER면 OBSERVER
+        String allowed = nextCreatableRole(myRole);
         if (allowed == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "조회 권한 없음");
 
         String targetRole = (role == null || role.isBlank()) ? allowed : role.trim();
@@ -86,7 +76,6 @@ public class AccountManageController {
                 .toList();
     }
 
-    // === 생성: MASTER 가 생성하면 OWNER, OWNER 가 생성하면 OBSERVER ===
     @PostMapping("/create")
     @PreAuthorize("hasAnyRole('MASTER','OWNER')")
     public ResponseEntity<?> create(
@@ -124,7 +113,6 @@ public class AccountManageController {
         }
     }
 
-    // === 비밀번호 변경: MASTER/OWNER는 자신이 관리할 수 있는 대상 역할만 변경 가능 ===
     @PatchMapping("/{username}/userpassword")
     @PreAuthorize("hasAnyRole('MASTER','OWNER')")
     public Map<String, Object> resetPassword(
@@ -141,7 +129,7 @@ public class AccountManageController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 없음"));
 
         String myRole = effectiveRole(me);
-        String allowed = nextCreatableRole(myRole); // MASTER→OWNER, OWNER→OBSERVER
+        String allowed = nextCreatableRole(myRole);
         String targetRole = userAuthorityRepository.findByUserId(target.getId())
                 .map(UserAuthority::getAuthority).orElse(null);
         if (allowed == null || !allowed.equals(targetRole)) {
@@ -152,7 +140,6 @@ public class AccountManageController {
         return Map.of("ok", true);
     }
 
-    // === 삭제: MASTER/OWNER는 자신이 관리할 수 있는 대상 역할만 삭제 가능 ===
     @DeleteMapping("/{username}")
     @PreAuthorize("hasAnyRole('MASTER','OWNER')")
     public Map<String, Object> remove(

@@ -41,10 +41,6 @@ public class CamController {
         return RTSPURL;
     }
 
-//
-//    @GetMapping("/list/{userId}")
-//    public List<CameraInfosDTO> getAllCameraInfos(@PathVariable Long userId) {
-//    }
 
 
     @GetMapping("/list-byUserId")
@@ -94,7 +90,6 @@ public class CamController {
                 }
         ));
 
-        // 디버깅 출력
         System.out.println("ownerIds=" + ownerIds);
         System.out.println("users.size=" + users.size());
         users.forEach(u -> System.out.println(
@@ -116,7 +111,6 @@ public class CamController {
         }).toList();
     }
 
-    // CamController.java
 
     @PatchMapping("/{cameraId}")
     public ResponseEntity<?> updateCamera(

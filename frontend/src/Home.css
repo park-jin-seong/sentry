@@ -1,8 +1,7 @@
 :root {
-    --chat-opacity: 0.7; /* 기본값 70% */
+    --chat-opacity: 0.7;
 }
 
-/* 전역 스크롤 제거 */
 html, body {
     height: 100%;
     margin: 0;
@@ -15,18 +14,17 @@ body {
     color: #fff;
     width: 100vw;
     height: 100vh;
-    overflow: hidden; /* 전역 스크롤 방지 */
+    overflow: hidden;
 }
 
-/* 앱 틀 */
+
 .app-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px); /* 고정 */
+    height: calc(100vh - 60px);
     width: 100vw;
 }
 
-/* 상단바 */
 .top-bar {
     position: relative;
     display: flex;
@@ -53,7 +51,6 @@ body {
     cursor:pointer;
 }
 
-/* 내비 */
 .nav-menu {
     position: relative;
     display: flex;
@@ -109,14 +106,12 @@ body {
     color: #FFFFFF;
 }
 
-/* 메인 */
 .main-content {
     display: flex;
     flex: 1;
-    min-height: 0; /* 자식 넘침으로 부모가 밀리지 않도록 */
+    min-height: 0;
 }
 
-/* 사이드바: 필요 시에만 자체 스크롤 */
 .sidebar {
      width: var(--sidebar-width);
     background-color: #333;
@@ -131,25 +126,22 @@ body {
     margin: 0;
 }
 
-/* 콘텐츠 영역: 스크롤 제거, CameraFeed 전체 덮기 */
 .content-area {
     position: relative;
     flex: 1;
     background-color: #2e2e2e;
     padding: 0;
     margin: 0;
-    overflow: hidden; /* 스크롤 제거 */
+    overflow: hidden;
     min-width: 0;
     min-height: 0;
 }
 
-/* CameraFeed가 content-area 가득 덮도록 */
 .content-area > :first-child {
     position: absolute;
-    inset: 0; /* top:0; right:0; bottom:0; left:0; */
+    inset: 0;
 }
 
-/* CameraFeed 내부 그리드(단일 전체 화면 가정) */
 .video-grid {
     position: absolute;
     inset: 0;
@@ -162,31 +154,26 @@ body {
     height: 100%;
 }
 
-/* ====== 지도 모달 오버레이 ====== */
-
-/* 화면 전체 어둡게 + 중앙 정렬 */
 .map-overlay {
     position: fixed;
-    inset: 0; /* top:0; right:0; bottom:0; left:0 */
-    background: rgba(0, 0, 0, 0.6); /* 뒤 어둡게 */
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2000; /* 최상단에 가깝게 (챗 패널보다 위) */
+    z-index: 2000;
 }
 
-/* 맵을 담는 모달 상자 */
 .map-modal {
     position: relative;
-    width: 1000px; /* 고정 크기 */
-    height: 660px; /* 맵 600 + 버튼 공간 */
+    width: 1000px;
+    height: 660px;
     background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* 맵 박스 */
 .map-box {
     width: 1000px;
     height: 600px;
@@ -194,16 +181,14 @@ body {
     border: 1px solid #000;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
     position: relative;
-    overflow: hidden; /* 내부 스크롤 방지 */
+    overflow: hidden;
 }
 
-/* 카카오맵 캔버스 */
 .map-canvas {
     position: absolute;
     inset: 0;
 }
 
-/* 닫기 버튼: 맵 밑 중앙 (아이콘 이미지 사용) */
 .map-close {
     margin-top: 12px;
     background: transparent;
@@ -219,13 +204,12 @@ body {
     user-select: none;
 }
 
-/* 우측 챗 패널: 항상 오른쪽 고정 */
 .collapsible-bar {
     position: fixed;
     top: 0;
-    right: 0; /* 오른쪽 고정 */
-    left: auto !important; /* 남아있는 left 영향 차단 */
-    z-index: 1300; /* 오버레이(2000)보다 낮게 */
+    right: 0;
+    left: auto !important;
+    z-index: 1300;
     height: 100vh;
     width: clamp(
         20vw,
@@ -235,8 +219,8 @@ body {
     background-color: rgba(46, 46, 46, var(--chat-bg-alpha, 0.7));
     border-left: 2px solid #00a0e9;
     box-sizing: border-box;
-    transform: translateX(100%); /* 닫을 때 오른쪽 바깥 */
-    transform-origin: right center; /* 오른쪽 기준 */
+    transform: translateX(100%);
+    transform-origin: right center;
     transition: transform 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
@@ -246,7 +230,6 @@ body {
     transform: translateX(0);
 }
 
-/* 토글 버튼 */
 .toggle-btn {
     position: absolute;
     top: 50%;
@@ -284,21 +267,16 @@ body {
     display: flex;
 }
 
-/* 마우스로 클릭할 땐 포커스 테두리 숨기기, 키보드(Tab)로 포커스 이동할 땐 보이기 */
-
-/* 공통: 기본 아웃라인 제거 */
 .toggle-btn:focus,
 .map-close:focus {
     outline: none;
 }
 
-/* 마우스 포커스는 숨기고(:focus) 키보드 포커스만(:focus-visible) 커스텀 표시 */
 .toggle-btn:focus:not(:focus-visible),
 .map-close:focus:not(:focus-visible) {
     outline: none;
 }
 
-/* 키보드로 포커스가 왔을 때만 보이는 커스텀 링 */
 .toggle-btn:focus-visible {
     outline: 2px solid #207590;
     box-shadow: 0 0 0 3px rgba(32,117,144,0.35);
@@ -310,27 +288,23 @@ body {
     border-radius: 999px;
 }
 
-/* 모바일 터치 하이라이트 제거(사파리/크롬) */
 .toggle-btn,
 .map-close {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 파이어폭스 내부 포커스 테두리 제거 */
 .map-close::-moz-focus-inner,
 .toggle-btn::-moz-focus-inner {
     border: 0;
 }
 
-
-/* 도움말 */
 .help-link {
     position: relative;
 }
 
 .help-dropdown {
     position: absolute;
-    top: 100%;       /* 도움말 바로 밑 */
+    top: 100%;
     left: 115px;
     margin-top: 4px;
     background: #444;
@@ -347,7 +321,7 @@ body {
 }
 
 .help-dropdown a:hover {
-    color: #d1d1d1; /* 호버 시 노란색 등 원하는 색 */
+    color: #d1d1d1;
 }
 
 

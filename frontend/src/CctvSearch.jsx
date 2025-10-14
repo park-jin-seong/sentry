@@ -15,7 +15,7 @@ export default function CctvSearch() {
     const onSearch = async () => {
         setLoading(true); setErr("");
         try {
-            const json = await searchCctv({ type, cctvType, minX, maxX, minY, maxY }); // ← type 전달
+            const json = await searchCctv({ type, cctvType, minX, maxX, minY, maxY });
             setData(json?.response?.data ?? []);
         } catch (e) {
             setErr(e.message ?? "오류");

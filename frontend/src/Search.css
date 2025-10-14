@@ -244,11 +244,9 @@ body {
 .content-area {
     flex: 1;
     position: relative;
-    padding: 20px;
+    padding: 0 20px 20px 20px;
     background-color: #2e2e2e;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    overflow-y: hidden;
     height: 100%;
 }
 
@@ -257,9 +255,16 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     width: 100%;
-    flex: 1;
+    position: absolute;
+    margin-top: 20px;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: calc(100% - 30px - 20px - 42px);
+    height: calc(100% - 92px);
+
     grid-template-rows: repeat(3, minmax(0, 1fr));
-    overflow-y: hidden;
+    overflow-y: auto;
     align-content: start;
 }
 
@@ -315,10 +320,16 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px 0;
+    position: absolute;
+    bottom: 15px;
+    left: 20px;
+    right: 20px;
+    height: 42px;
+    padding: 0;
     gap: 20px;
     color: #fff;
-    flex-shrink: 0;
+    background-color: #2e2e2e;
+    box-sizing: border-box;
 }
 
 .pagination-controls button {
@@ -381,7 +392,6 @@ body {
     display: flex;
 }
 
-/* 모달 전체 배경 */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -395,7 +405,6 @@ body {
     z-index: 2000;
 }
 
-/* 모달 박스 */
 .modal-content {
     background: #444;
     padding: 15px;
@@ -406,21 +415,18 @@ body {
     position: relative;
 }
 
-/* 모달 이미지 */
 .modal-image {
     max-width: 100%;
     max-height: 70vh;
     border-radius: 5px;
 }
 
-/* 설명 텍스트 */
 .modal-text {
     margin-top: 10px;
     font-size: 14px;
     color: white;
 }
 
-/* 닫기 버튼 */
 .modal-close {
     margin-top: 10px;
     padding: 5px 12px;
