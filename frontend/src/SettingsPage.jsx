@@ -13,7 +13,7 @@ export default function SettingsPage() {
     const { me } = useAuth();
     const isObserver = !!me?.roles?.includes?.("ROLE_OBSERVER");
 
-    // URL ?tab=... → 초기 탭 결정 (observer면 chat 강제)
+
     const initial = (() => {
         const sp = new URLSearchParams(window.location.search);
         const fromUrl = sp.get("tab");
@@ -23,13 +23,13 @@ export default function SettingsPage() {
 
     const [active, setActive] = useState(initial);
 
-    // 활성 패널 선택 (observer면 chat 외 접근해도 chat로 고정)
+
     const ActivePanel = useMemo(() => {
         const key = isObserver ? "chat" : active;
         return PANEL_MAP[key] ?? PANEL_MAP.chat ?? PANEL_MAP.my;
     }, [active, isObserver]);
 
-    // URL 동기화 (?tab=active)
+
     useEffect(() => {
         const sp = new URLSearchParams(location.search);
         sp.set("tab", isObserver ? "chat" : active);
@@ -37,7 +37,7 @@ export default function SettingsPage() {
         window.history.replaceState({}, "", url);
     }, [active, isObserver, location.search]);
 
-    // observer가 URL로 다른 탭을 넣어도 강제로 chat 선택
+
     useEffect(() => {
         if (isObserver && active !== "chat") {
             setActive("chat");
@@ -54,7 +54,6 @@ export default function SettingsPage() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    // 탭 버튼 렌더러: observer면 chat 외 탭은 disabled + 클릭 막기
     const renderTabButton = (tab) => {
         const selected = tab.key === (isObserver ? "chat" : active);
         const disabled = isObserver && tab.key !== "chat";
@@ -102,12 +101,10 @@ export default function SettingsPage() {
                 {TABS.slice(3).map(renderTabButton)}
             </aside>
 
-            {/* 오른쪽 본문 */}
             <main className="settings-main">
                 <header className="settings-header">
                     <h1 className="settings-h1">{title}</h1>
 
-                    {/* 우상단 닫기(이미지 + ESC 라벨) */}
                     <button
                         className="esc-close"
                         onClick={onClose}

@@ -23,7 +23,7 @@ public class AnalysisAssignController {
         try (Socket socket = new Socket(serverIp, port);
              DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
 
-            byte[] triggerBytes = (msg + "\n").getBytes("UTF-8");  // 개행 포함
+            byte[] triggerBytes = (msg + "\n").getBytes("UTF-8");
             dos.write(triggerBytes);
             dos.flush();
 

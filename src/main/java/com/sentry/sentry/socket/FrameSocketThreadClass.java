@@ -63,13 +63,13 @@ public class FrameSocketThreadClass {
                 ObjectMapper mapper = new ObjectMapper();
 
                 String trigger = "render";
-                byte[] triggerBytes = (trigger + "\n").getBytes("UTF-8");  // 개행 포함
+                byte[] triggerBytes = (trigger + "\n").getBytes("UTF-8");
                 dos.write(triggerBytes);
                 dos.flush();
 
                 StreamInfoDTO streamInfoDTO = new StreamInfoDTO(userId, cameraIds);
                 String json = mapper.writeValueAsString(streamInfoDTO);
-                byte[] triggerBytes1 = (json + "\n").getBytes("UTF-8");  // 개행 포함
+                byte[] triggerBytes1 = (json + "\n").getBytes("UTF-8");
                 dos.write(triggerBytes1);
                 dos.flush();
 
@@ -78,31 +78,27 @@ public class FrameSocketThreadClass {
                     try {
                         Thread.sleep(10);
                         byte[] lenBytes = new byte[4];
-                        dis.readFully(lenBytes); // 정확히 4바이트 채움
+                        dis.readFully(lenBytes);
 
-                        // big-endian → int 변환
                         int length = ((lenBytes[0] & 0xFF) << 24) |
                                 ((lenBytes[1] & 0xFF) << 16) |
                                 ((lenBytes[2] & 0xFF) << 8)  |
                                 (lenBytes[3] & 0xFF);
 
-                        // 이제 length만큼 데이터 읽기
                         byte[] imgBytes = new byte[length];
                         dis.readFully(imgBytes);
 
 
-                        // BufferedImage 변환
                         BufferedImage img = ImageIO.read(new ByteArrayInputStream(imgBytes));
 
                         if (img == null) continue;
 
-                        // 프레임을 Base64로 바로 변환
                         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                             ImageIO.write(img, "jpg", baos);
                             String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
 
                             if (!frameQueues.offer(base64)) {
-                                frameQueues.poll(); // 오래된 프레임 제거
+                                frameQueues.poll();
                                 frameQueues.offer(base64);
                             }
                         } catch (Exception ignored) {}

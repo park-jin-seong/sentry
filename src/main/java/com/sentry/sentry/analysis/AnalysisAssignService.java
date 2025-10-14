@@ -14,7 +14,6 @@ import java.util.List;
 public class AnalysisAssignService {
     private final CameraInfosRepository cameraInfosRepository;
 
-    /** 엔티티가 아니라 DTO로 리턴 */
     @Transactional(readOnly = true)
     public List<CameraDto> listAssignableCameras(Long serverId) {
         var list = cameraInfosRepository.findAssignable(serverId.intValue());
@@ -35,7 +34,6 @@ public class AnalysisAssignService {
 
     public record CameraDto(Long cameraId, String cameraName, Integer analysisServerId) {}
 
-    // com.sentry.sentry.analysis.AnalysisAssignService
     @Transactional
     public int unassignCamerasFromServer(Long serverId, List<Long> cameraIds) {
         if (cameraIds == null || cameraIds.isEmpty()) return 0;

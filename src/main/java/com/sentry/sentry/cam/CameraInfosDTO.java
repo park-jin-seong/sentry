@@ -17,9 +17,9 @@ public class CameraInfosDTO {
     private double coordy;
     private Boolean isAnalisis;
 
-    private Long ownerUserId;   // ← 반드시 채워서 내려오기
-    private boolean isOwner;    // 내 소유 여부
-    private String ownerName;   // ← 여기로 업로더 표시
+    private Long ownerUserId;
+    private boolean isOwner;
+    private String ownerName;
 
     public CameraInfosDTO(CameraInfos c, Long currentUserId) {
         this.cameraId = c.getCameraId();

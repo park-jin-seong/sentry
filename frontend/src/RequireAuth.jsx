@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { api } from "./lib/api.js";
 
-/** /api/me 로 실제 인증 확인 (localStorage 절대 사용 X) */
 export default function RequireAuth({ children }) {
     const [state, setState] = useState("checking"); // "checking" | "ok" | "fail"
 

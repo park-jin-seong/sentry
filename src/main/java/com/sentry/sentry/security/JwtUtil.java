@@ -31,7 +31,6 @@ public class JwtUtil {
         this.REFRESH_MS = refreshMs;
     }
 
-    /** Access 토큰 생성 (roles 등 클레임 포함 가능) */
     public String generateAccessToken(String username, Map<String, Object> claims) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
@@ -44,7 +43,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    /** Refresh 토큰 생성 */
     public String generateRefreshToken(String username, Map<String, Object> claims) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
@@ -57,7 +55,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    /** 토큰 유효성 검증(서명/파싱) */
     public boolean validate(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
@@ -67,7 +64,6 @@ public class JwtUtil {
         }
     }
 
-    /** 만료 여부 */
     public boolean isExpired(String token) {
         try {
             Date exp = parseClaims(token).getExpiration();
@@ -77,13 +73,11 @@ public class JwtUtil {
         }
     }
 
-    /** subject(username) */
     public String getUsername(String token) {
         return parseClaims(token).getSubject();
     }
 
-    /** roles 클레임 추출 (없으면 빈 리스트) */
-    @SuppressWarnings("unchecked")
+
     public List<String> getRoles(String token) {
         try {
             Object rolesObj = parseClaims(token).get("roles");
@@ -96,7 +90,6 @@ public class JwtUtil {
         }
     }
 
-    /** Claims 파싱 */
     public Claims parseClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -105,7 +98,6 @@ public class JwtUtil {
                 .getBody();
     }
 
-    /** refresh 토큰인지 여부 (typ=refresh) */
     public boolean isRefreshToken(String token) {
         try {
             Object typ = parseClaims(token).get("typ");

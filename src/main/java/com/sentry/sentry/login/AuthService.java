@@ -21,7 +21,6 @@ public class AuthService {
     private final RoomRepository roomRepository;
     private final RoomUserRepository roomUserRepository;
 
-    // ★ A안: 메시지 삭제까지 하기 위해 주입
     private final ChatRepository chatRepository;
 
     public Userinfo getUserinfo(String username) {
@@ -55,7 +54,6 @@ public class AuthService {
         return u;
     }
 
-    // === 새 유저 생성 (MASTER -> OWNER, OWNER -> OBSERVER만) ===
     @Transactional
     public Userinfo createUserByRole(Long creatorId, String creatorRole,
                                      String newUsername, String rawPw, String nickname) {
@@ -76,14 +74,12 @@ public class AuthService {
             default       -> throw new IllegalArgumentException("계정을 생성할 권한이 없습니다.");
         };
 
-        // 1) 유저 저장
         Userinfo nu = new Userinfo();
         nu.setUsername(newUsername.trim());
         nu.setUserpassword(passwordEncoder.encode(rawPw));
         nu.setNickname((nickname == null || nickname.isBlank()) ? newUsername : nickname.trim());
         Userinfo saved = userinfoRepository.save(nu);
 
-        // 2) 권한 저장
         userAuthorityRepository.save(
                 UserAuthority.builder()
                         .userId(saved.getId())
@@ -91,7 +87,6 @@ public class AuthService {
                         .build()
         );
 
-        // 3) 기본 방(id=1)에 room_user 자동 생성
         Room defaultRoom = roomRepository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("기본 방(id=1)이 없습니다."));
 
@@ -99,14 +94,13 @@ public class AuthService {
             RoomUser ru = new RoomUser();
             ru.setUser(saved);
             ru.setRoom(defaultRoom);
-            ru.setLastReadMessage(null); // 아직 읽은 메시지 없음
+            ru.setLastReadMessage(null);
             roomUserRepository.save(ru);
         }
 
         return saved;
     }
 
-    // === 관리자: 비밀번호 초기화 ===
     @Transactional
     public void adminUpdatePasswordByUsername(String username, String rawPw) {
         if (rawPw == null || rawPw.length() < 8)
@@ -118,21 +112,16 @@ public class AuthService {
         userinfoRepository.save(u);
     }
 
-    // === A안: 계정 완전 삭제 (연관 데이터 → 메시지까지 함께 삭제) ===
     @Transactional
     public void deleteUserCompletely(Long userId) {
-        // 1) room_user 제거 (FK 충돌 방지)
         roomUserRepository.deleteByUser_Id(userId);
 
-        // 2) 이 유저가 보낸 메시지 전부 제거 (FK 충돌 방지)
         if (chatRepository.existsBySender_Id(userId)) {
             chatRepository.deleteBySender_Id(userId);
         }
 
-        // 3) 권한 제거
         userAuthorityRepository.deleteByUserId(userId);
 
-        // 4) 유저 제거
         userinfoRepository.deleteById(userId);
     }
 }

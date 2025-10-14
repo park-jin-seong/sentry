@@ -20,7 +20,6 @@ export default function Login() {
     const next = location.state?.from?.pathname || "/home";
     const { reload, me } = useAuth();
 
-    // 로그인 페이지 진입 시 잔여 토큰/리프레시 쿠키 정리
     useEffect(() => {
         api.clearAccessToken?.();
         fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
@@ -75,15 +74,12 @@ export default function Login() {
                 throw new Error("토큰이 응답에 없습니다.");
             }
 
-            // 1) 토큰 저장
             api.setAccessToken(data.accessToken);
             console.log("accessToken length =", data.accessToken.length);
             console.log("peekAccessToken 존재? =", !!api.peekAccessToken?.());
 
-            // 2) 토큰 기준으로 /api/me 재조회 완료까지 대기
             await reload();
 
-            // 3) 보호 라우트로 이동
             console.log("navigate →", next);
             navigate(next, { replace: true });
         } catch (e2) {

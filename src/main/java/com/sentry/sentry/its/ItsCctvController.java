@@ -20,7 +20,7 @@ class ItsCctvController {
 
     @GetMapping("/cctv")
     public ResponseEntity<ItsCctvResponse> search(
-            @RequestParam(defaultValue = "its") String type,      // ex | its
+            @RequestParam(defaultValue = "its") String type,
             @RequestParam(defaultValue = "1") int cctvType,
             @RequestParam double minX,
             @RequestParam double maxX,

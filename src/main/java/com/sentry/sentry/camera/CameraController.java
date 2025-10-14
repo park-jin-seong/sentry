@@ -22,7 +22,6 @@ public class CameraController {
     private final CamService camService;
     private final UserinfoRepository userinfoRepository;
 
-    /** 사용자 할당 목록 (DTO) */
     @GetMapping("/assigned")
     public List<CameraInfosDTO> assigned(@RequestParam Long userId) {
         return service.listAssigned(userId).stream()
@@ -30,7 +29,6 @@ public class CameraController {
                 .toList();
     }
 
-    /** 오너만 수정 가능 */
     @PatchMapping("/{cameraId}")
     public ResponseEntity<CameraInfosDTO> update(
             @PathVariable Long cameraId,
@@ -41,7 +39,6 @@ public class CameraController {
         return ResponseEntity.ok(new CameraInfosDTO(info, userId));
     }
 
-    /** 오너면 하드삭제, 비오너면 내 매핑만 해제 */
     @DeleteMapping("/{cameraId}")
     public ResponseEntity<Void> delete(
             @PathVariable Long cameraId,
@@ -61,7 +58,6 @@ public class CameraController {
         return ResponseEntity.ok(new CameraInfosDTO(saved, creatorId));
     }
 
-    /** 개별 할당 */
     @PostMapping("/assign")
     public ResponseEntity<?> assignOne(
             @RequestParam Long userId,
@@ -71,7 +67,6 @@ public class CameraController {
         return ResponseEntity.ok().build();
     }
 
-    /** 배치 할당 */
     @PostMapping("/assign/batch")
     public ResponseEntity<?> assignBatch(@RequestBody AssignBatchReq req) {
         if (req == null || req.userId() == null || req.cameraIds() == null || req.cameraIds().isEmpty()) {
@@ -81,7 +76,6 @@ public class CameraController {
         return ResponseEntity.ok(Map.of("assigned", req.cameraIds().size()));
     }
 
-    /** username 기반 단건 할당 (userId 없는 경우 폴백) */
     @PostMapping("/assign/by-username")
     public ResponseEntity<?> assignByUsername(
             @RequestParam String username,
@@ -93,7 +87,6 @@ public class CameraController {
         return ResponseEntity.ok().build();
     }
 
-    /** (GET 테스트용) username 기반 단건 할당 */
     @GetMapping("/assign/by-username")
     public ResponseEntity<?> assignByUsernameGet(
             @RequestParam String username,
@@ -105,13 +98,11 @@ public class CameraController {
         return ResponseEntity.ok(Map.of("result","ok(get)"));
     }
 
-    /** userId 기반: 이미 배정된 id 리스트 */
     @GetMapping("/assigned/ids")
     public List<Long> assignedIds(@RequestParam Long userId) {
         return service.listAssignedIds(userId);
     }
 
-    /** username 기반: 이미 배정된 id 리스트 */
     @GetMapping("/assigned/ids/by-username")
     public ResponseEntity<?> assignedIdsByUsername(@RequestParam String username) {
         var userOpt = userinfoRepository.findByUsername(username);
@@ -120,7 +111,6 @@ public class CameraController {
         return ResponseEntity.ok(service.listAssignedIds(uid));
     }
 
-    /** username 기반 해제 (프론트 폴백용) */
     @DeleteMapping("/assign/by-username")
     public ResponseEntity<?> unassignByUsername(
             @RequestParam String username,
@@ -130,6 +120,5 @@ public class CameraController {
         return ResponseEntity.noContent().build();
     }
 
-    /** 배치 요청 DTO */
     public record AssignBatchReq(Long userId, java.util.List<Long> cameraIds) {}
 }

@@ -71,13 +71,13 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
                         .requestMatchers("/test", "/test.html").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
-                        // 그 외 모든 요청은 인증 필요
+
                         .requestMatchers("/api/auth/**").permitAll()              // 로그인/회원가입
                         .requestMatchers("/chat/**", "/room/**").permitAll() // 테스트용
                         .requestMatchers("/api/accounts/create").hasAnyRole("MASTER","OWNER")
-                        .requestMatchers("/api/cam/**").permitAll() // 테스트용(나중에 변겯하기)
-                        .requestMatchers("/api/image/**").permitAll() // 테스트용(나중에 변겯하기)
-                        .requestMatchers("/ws/rtsp").permitAll() // 테스트용(나중에 변경하기)
+                        .requestMatchers("/api/cam/**").permitAll() // 테스트용
+                        .requestMatchers("/api/image/**").permitAll() // 테스트용
+                        .requestMatchers("/ws/rtsp").permitAll() // 테스트용
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

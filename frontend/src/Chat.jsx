@@ -15,7 +15,7 @@ const Chat = () => {
 
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
-    const [composing, setComposing] = useState(false); //  IME 한글 조합 여부
+    const [composing, setComposing] = useState(false);
     const [connected, setConnected] = useState(false);
 
     const stompClientRef = useRef(null);
@@ -228,11 +228,10 @@ const Chat = () => {
                         placeholder="메시지를 입력하세요"
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
-                        onCompositionStart={() => setComposing(true)}   // 한글 조합 시작
-                        onCompositionEnd={() => setComposing(false)}    // 한글 조합 끝
+                        onCompositionStart={() => setComposing(true)}
+                        onCompositionEnd={() => setComposing(false)}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                                // 조합 중이면 무시 (브라우저별 보강)
                                 if (composing || e.nativeEvent.isComposing) return;
                                 e.preventDefault();
                                 sendMessage();

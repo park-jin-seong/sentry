@@ -37,34 +37,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,WebSock
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // 단일 엔드포인트, 채널은 쿼리 파라미터로 전달
         registry.addHandler(rtspWebSocketHandler, "/ws/rtsp")
                 .setAllowedOrigins("*");
     }
-//
-//@Configuration
-//@EnableWebSocket
-//@EnableWebSocketMessageBroker
-//@RequiredArgsConstructor
-//public class WebSocketConfig implements WebSocketConfigurer, WebSocketMessageBrokerConfigurer {
-//    private final RtspWebSocketHandler rtspWebSocketHandler;
-//    @Override
-//    public void configureMessageBroker(MessageBrokerRegistry registry) {
-//        registry.setApplicationDestinationPrefixes("/send");
-//        registry.enableSimpleBroker("/room");
-//    }
-//
-//    @Override
-//    public void registerStompEndpoints(StompEndpointRegistry registry) {
-//        registry.addEndpoint("/chat")
-//                .setAllowedOriginPatterns("*")
-//                .withSockJS();
-//    }
-//    @Override
-//    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//
-//        registry.addHandler(rtspWebSocketHandler, "/ws/rtsp")
-//                .setAllowedOrigins("*");
-//    }
 
 }

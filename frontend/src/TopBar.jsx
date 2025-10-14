@@ -36,7 +36,6 @@ export default function TopBar() {
                 <NavLink to="/home" className="nav-item">관제</NavLink>
                 <NavLink to="/search" className="nav-item">검색</NavLink>
 
-                {/* 도움말 */}
                 <span
                     className={`nav-item ${showHelp ? "active" : ""}`}
                     onClick={() => setShowHelp((prev) => !prev)}

@@ -19,23 +19,23 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
-    private final JwtUtil jwtUtil;                         // 토큰 파싱/검증
-    private final CustomUserDetailsService userDetailsSvc; // 유저 로드
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsSvc;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String auth = accessor.getFirstNativeHeader("Authorization"); // STOMP Native header
+            String auth = accessor.getFirstNativeHeader("Authorization");
             if (auth != null && auth.startsWith("Bearer ")) {
                 String token = auth.substring(7);
-                String username = jwtUtil.getUsername(token);           // 필요시 검증 로직 추가 (만료/서명)
+                String username = jwtUtil.getUsername(token);
                 var userDetails = userDetailsSvc.loadUserByUsername(username);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
 
-                accessor.setUser(authentication);                       // WebSocket Principal 주입
+                accessor.setUser(authentication);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
